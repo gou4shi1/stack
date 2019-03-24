@@ -11,6 +11,9 @@ class BugOnNullPass : public BugOnPass {
 	bool runOnInstruction(Instruction *) override;
 
 	SmallPtrSet Visited;
+
+public:
+    static StringRef name() { return "bugon-null"; }
 };
 
 } // end stack namespace

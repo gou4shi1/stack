@@ -1,6 +1,5 @@
 #pragma once
 
-#include "llvm/IR/PassManager.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Dominators.h"
 
@@ -30,7 +29,7 @@ public:
 	}
 };
 
-class BugOnPass : public llvm::PassInfoMixin<BugOnPass> {
+class BugOnPass {
 protected:
     typedef llvm::PreservedAnalyses PreservedAnalyses;
     typedef llvm::FunctionAnalysisManager FunctionAnalysisManager;
