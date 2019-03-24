@@ -1,5 +1,6 @@
 #include "BugOnInt.h"
 #include "BugOnNull.h"
+#include "BugOnUndef.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
@@ -17,6 +18,7 @@ llvmGetPassPluginInfo() {
           if(PassName == "bugon"){
             FPM.addPass(stack::BugOnIntPass());
             FPM.addPass(stack::BugOnNullPass());
+            FPM.addPass(stack::BugOnUndefPass());
             return true;
           }
           return false;
