@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/guangqing.chen/STACK/build/BugOn",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -I/usr/local/include  -g -fPIC   -D_GNU_SOURCE -D_DEBUG -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-exceptions -fno-rtti -std=gnu++11 -o CMakeFiles/libBugOnPass.dir/BugOn.cc.o -c /home/guangqing.chen/STACK/BugOn/BugOn.cc",
+  "file": "/home/guangqing.chen/STACK/BugOn/BugOn.cc"
+},
+{
+  "directory": "/home/guangqing.chen/STACK/build/BugOn",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -I/usr/local/include  -g -fPIC   -D_GNU_SOURCE -D_DEBUG -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-exceptions -fno-rtti -std=gnu++11 -o CMakeFiles/libBugOnPass.dir/BugOnPass.cc.o -c /home/guangqing.chen/STACK/BugOn/BugOnPass.cc",
+  "file": "/home/guangqing.chen/STACK/BugOn/BugOnPass.cc"
+}
+]
