@@ -33,9 +33,16 @@ StringRef BugOnInst::getAnnotation() const {
 	return cast<MDString>(MD->getOperand(0))->getString();
 }
 
+PreservedAnalyses BugOnPass::run(Function &F, FunctionAnalysisManager &FAM) {
+    bool changed = runOnInstructionsOfFunction(F);
+    return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
+}
+
 bool BugOnPass::runOnInstructionsOfFunction(Function &F) {
-	IRBuilder<> TheBuilder(F.getContext());
+	BuilderTy TheBuilder(F.getContext());
 	Builder = &TheBuilder;
+	DL = &F.getParent()->getDataLayout();
+
 	bool Changed = false;
     for (auto &I: instructions(F)) {
 		if (!I.getDebugLoc()) continue;
@@ -65,8 +72,8 @@ bool BugOnPass::recursivelyClearDebugLoc(Value *V) {
 	return true;
 }
 
-Value *BugOnPass::getUnderlyingObject(Value *V, const DataLayout &DL) {
-	return GetUnderlyingObject(V, DL, 1000);
+Value *BugOnPass::getUnderlyingObject(Value *V) {
+	return GetUnderlyingObject(V, *DL, 1000);
 }
 
 Value *BugOnPass::getAddressOperand(Value *I, bool skipVolatile) {
@@ -147,9 +154,9 @@ void BugOnPass::setInsertPointAfter(Instruction *I) {
 	Builder->SetCurrentDebugLocation(DebugLoc());
 }
 
-Value *BugOnPass::createIsNull(Value *V, const DataLayout &DL, const Instruction *CtxI, const DominatorTree *DT) {
+Value *BugOnPass::createIsNull(Value *V) {
 	// Ignore trivial non-null pointers (e.g., a stack pointer).
-	if (isDereferenceablePointer(V, DL, CtxI, DT))
+	if (isDereferenceablePointer(V, *DL))
 		return Builder->getFalse();
 	return Builder->CreateIsNull(V);
 }
@@ -158,8 +165,8 @@ Value *BugOnPass::createIsZero(Value *V) {
 	return Builder->CreateIsNull(V);
 }
 
-Value *BugOnPass::createIsNotNull(Value *V, const DataLayout &DL, const Instruction *CtxI, const DominatorTree *DT) {
-	if (isDereferenceablePointer(V, DL, CtxI, DT))
+Value *BugOnPass::createIsNotNull(Value *V) {
+	if (isDereferenceablePointer(V, *DL))
 		return Builder->getTrue();
 	return Builder->CreateIsNotNull(V);
 }

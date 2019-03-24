@@ -6,11 +6,6 @@ using namespace llvm;
 
 namespace stack {
 
-PreservedAnalyses BugOnIntPass::run(Function &F, FunctionAnalysisManager &FAM) {
-    bool changed = runOnInstructionsOfFunction(F);
-    return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
-}
-
 bool BugOnIntPass::runOnInstruction(Instruction *I) {
 	BinaryOperator *BO = dyn_cast<BinaryOperator>(I);
 	if (!BO) return false;
