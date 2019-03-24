@@ -8,9 +8,11 @@ namespace stack {
 
 bool BugOnIntPass::runOnInstruction(Instruction *I) {
 	BinaryOperator *BO = dyn_cast<BinaryOperator>(I);
-	if (!BO) return false;
+	if (!BO)
+        return false;
 	IntegerType *T = dyn_cast<IntegerType>(I->getType());
-	if (!T) return false;
+	if (!T)
+        return false;
 	Value *L = I->getOperand(0);
 	Value *R = I->getOperand(1);
 	bool Changed = false;

@@ -12,8 +12,10 @@ bool BugOnNullPass::runOnInstruction(Instruction *I) {
 		return false;
     }
 	Value *Base = getNonvolatileBaseAddress(I);
-	if (!Base) return false;
-	if (!Visited.insert(Base).second) return false;
+	if (!Base)
+        return false;
+	if (!Visited.insert(Base).second)
+        return false;
 	return insert(createIsNull(Base), "null pointer dereference");
 }
 
