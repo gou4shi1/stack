@@ -4,8 +4,6 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Analysis/Loads.h"
 #include "llvm/IR/InstIterator.h"
-#include "llvm/Support/CommandLine.h"
-#include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
 
@@ -114,7 +112,7 @@ bool BugOnPass::insert(Value *V, StringRef Bug, const DebugLoc &DbgLoc) {
 	}
 	LLVMContext &C = V->getContext();
 	if (!BugOn) {
-		BugOn = getOrInsertBugOn(getModule());
+		BugOn = getOrInsertBugOn(getInsertModule());
 		MD_bug = C.getMDKindID("bug");
 	}
 	Instruction *I = Builder->CreateCall(BugOn, V);
@@ -124,7 +122,7 @@ bool BugOnPass::insert(Value *V, StringRef Bug, const DebugLoc &DbgLoc) {
 	return true;
 }
 
-Module *BugOnPass::getModule() {
+Module *BugOnPass::getInsertModule() {
 	return Builder->GetInsertBlock()->getParent()->getParent();
 }
 
@@ -169,7 +167,7 @@ Value *BugOnPass::createIsNotNull(Value *V, const DataLayout &DL, const Instruct
 Value *BugOnPass::createIsWrap(Intrinsic::ID ID, Value *L, Value *R) {
 	Type *T = L->getType();
 	assert(T == R->getType() && "Type mismatch!");
-	Function *F = Intrinsic::getDeclaration(getModule(), ID, T);
+	Function *F = Intrinsic::getDeclaration(getInsertModule(), ID, T);
 	return Builder->CreateExtractValue(Builder->CreateCall(F, {L, R}), 1);
 }
 

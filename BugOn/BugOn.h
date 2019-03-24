@@ -38,9 +38,12 @@ public:
 	typedef llvm::DominatorTree DominatorTree;
 	typedef llvm::IRBuilder<> BuilderTy;
 	typedef llvm::Value Value;
+	typedef llvm::Module Module;
 	typedef llvm::Function Function;
 	typedef llvm::BasicBlock BasicBlock;
 	typedef llvm::Instruction Instruction;
+	typedef llvm::StringRef StringRef;
+	typedef llvm::DebugLoc DebugLoc;
 
 private:
 	Function *BugOn;
@@ -73,9 +76,9 @@ protected:
 	virtual bool runOnInstruction(Instruction *) = 0;
     bool runOnInstructionsOfFunction(Function &);
 
-	bool insert(Value *, llvm::StringRef Bug);
-	bool insert(Value *, llvm::StringRef Bug, const llvm::DebugLoc &);
-	llvm::Module *getModule();
+	bool insert(Value *, StringRef Bug);
+	bool insert(Value *, StringRef Bug, const DebugLoc &);
+	Module *getInsertModule();
     void backupInsertPoint();
     void restoreInsertPoint();
     void setInsertPoint(Instruction *);
