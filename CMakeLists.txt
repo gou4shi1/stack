@@ -20,4 +20,4 @@ include_directories(${LLVM_INCLUDE_DIRS})
 
 add_subdirectory(BugOn)
 
-#add_subdirectory(Anti)
+add_subdirectory(Anti)
