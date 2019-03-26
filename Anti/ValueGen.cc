@@ -1,12 +1,9 @@
 #include "ValueGen.h"
+#include "SMTHelper.h"
+#include <llvm/Support/SMTAPI.h>
 #include <llvm/ADT/APInt.h>
-#include <llvm/IR/Constants.h>
 #include <llvm/IR/InstVisitor.h>
-#include <llvm/IR/IntrinsicInst.h>
-#include <llvm/IR/Operator.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
-#include <llvm/Support/raw_ostream.h>
-#include <assert.h>
 
 using namespace llvm;
 
@@ -17,121 +14,10 @@ namespace {
 
 class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 	ValueGen *VG;
-    SMTExprRef BVTrue, BVFalse;
 
-	SMTExprRef get(Value *V) {
-		return VG->get(V);
-	}
-
-	unsigned getBitWidth(Type *T) const {
-		return DL.getTypeSizeInBits(T);
-	}
-
-	unsigned getBitWidth(Value *V) const {
-		return getBitWidth(V->getType());
-	}
-
-    SMTExprRef mkBV(const APInt &Int) {
-        return SMT->mkBitvector(APSInt(Int), Int.getBitWidth());
-    }
-
-	SMTExprRef mkBVFresh(Value *V) {
-		std::string Name;
-		{
-			raw_string_ostream OS(Name);
-			if (V->hasName())
-				OS << V->getName();
-			// Make name unique, e.g., undef.
-			OS << "@" << V;
-		}
-        SMTSortRef Sort = SMT->getBitvectorSort(getBitWidth(V));
-        return SMT->mkSymbol(Name.c_str(), Sort);
-	}
-
-    SMTExprRef bool2bv(const SMTExprRef &Bool) {
-        SMT->mkIte(Bool, BVTrue, BVFalse);
-    }
-
-    SMTExprRef bv2bool(const SMTExprRef &BV) {
-        SMT->mkEqual(BV, BVTrue);
-    }
-
-    SMTExprRef mkBVSAddOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkOr(SMT->mkNot(SMT->mkBVAddNoOverflow(LHS, RHS, true)), SMT->mkNot(SMT->mkBVAddNoUnderflow(LHS, RHS))));
-    }
-
-    SMTExprRef mkBVUAddOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkNot(SMT->mkBVAddNoOverflow(LHS, RHS, false)));
-    }
-
-    SMTExprRef mkBVSSubOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkOr(SMT->mkNot(SMT->mkBVSubNoOverflow(LHS, RHS)), SMT->mkNot(SMT->mkBVSubNoUnderflow(LHS, RHS, true))));
-    }
-
-    SMTExprRef mkBVUSubOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkNot(SMT->mkBVSubNoUnderflow(LHS, RHS, false)));
-    }
-
-    SMTExprRef mkBVSMulOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkOr(SMT->mkNot(SMT->mkBVMulNoOverflow(LHS, RHS, true)), SMT->mkNot(SMT->mkBVMulNoUnderflow(LHS, RHS))));
-    }
-
-    SMTExprRef mkBVUMulOverflow(const SMTExprRef &LHS, const SMTExprRef &RHS) {
-        return bool2bv(SMT->mkNot(SMT->mkBVMulNoOverflow(LHS, RHS, false)));
-    }
-
-    void addRangeConstraints(SMTExprRef E, MDNode *MD) {
-        // !range comes in pairs.
-        unsigned n = MD->getNumOperands();
-        assert(n % 2 == 0);
-        for (unsigned i = 0; i != n; i += 2) {
-            auto LoOp = dyn_cast<ConstantAsMetadata>(MD->getOperand(i));
-            if (!LoOp)
-                report_fatal_error("Bit set element offset must be a constant");
-            const APInt &Lo = cast<ConstantInt>(LoOp->getValue())->getValue();
-
-            auto HiOp = dyn_cast<ConstantAsMetadata>(MD->getOperand(i+1));
-            if (!HiOp)
-                report_fatal_error("Bit set element offset must be a constant");
-            const APInt &Hi = cast<ConstantInt>(HiOp->getValue())->getValue();
-
-            //const APInt &Lo = cast<ConstantInt>(MD->getOperand(i))->getValue();
-            //const APInt &Hi = cast<ConstantInt>(MD->getOperand(i + 1))->getValue();
-            
-            // Ignore empty or full set.
-            if (Lo == Hi)
-                continue;
-            SMTExprRef Cmp0 = nullptr, Cmp1 = nullptr, Cond;
-            // Ignore >= 0.
-            if (!!Lo)
-                Cmp0 = SMT->mkBVUge(E, mkBV(Lo));
-            // Note that (< Hi) is not always correct.
-            // Need to ignore Hi == 0 (i.e., <= UMAX) or use (<= Hi - 1).
-            if (!!Hi) {
-                Cmp1 = SMT->mkBVUlt(E, mkBV(Hi));
-            }
-            if (!Cmp0) {
-                Cond = Cmp1;
-            } else if (!Cmp1) {
-                Cond = Cmp0;
-            } else {
-                if (Lo.ule(Hi))	// [Lo, Hi).
-                    Cond = SMT->mkBVAnd(Cmp0, Cmp1);
-                else	        // Wrap: [Lo, UMAX] union [0, Hi).
-                    Cond = SMT->mkBVOr(Cmp0, Cmp1);
-            }
-            SMT->addConstraint(Cond);
-        }
-    }
-
-    public:
-    ValueVisitor() = default;
-
+public:
 	SMTExprRef analyze(ValueGen *TheVG, Value *V) {
-        // initialize
         VG = TheVG;
-        BVTrue = mkBV(APInt(1, 1));
-        BVFalse = mkBV(APInt(1, 0));
 
 		if (!ValueGen::isAnalyzable(V)) {
 			V->dump();
@@ -147,11 +33,11 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 	SMTExprRef visitConstant(Constant *C) {
         if (ConstantInt *CI = dyn_cast<ConstantInt>(C)) {
             const APInt &Int = CI->getValue();
-            return mkBV(Int);
+            return mkBV(SMT, Int);
         }
         if (isa<ConstantPointerNull>(C)) {
             unsigned width = getBitWidth(C);
-            return mkBV(APInt::getNullValue(width));
+            return mkBV(SMT, APInt::getNullValue(width));
         }
 		if (GEPOperator *GEP = dyn_cast<GEPOperator>(C))
 			return visitGEPOperator(*GEP);
@@ -207,22 +93,22 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 		SMTExprRef L = get(I.getOperand(0)), R = get(I.getOperand(1));
 		switch (I.getPredicate()) {
         default: assert(0);
-        case CmpInst::ICMP_EQ:  return bool2bv(SMT->mkEqual(L, R));
-        case CmpInst::ICMP_NE:  return bool2bv(SMT->mkNot(SMT->mkEqual(L, R)));
-        case CmpInst::ICMP_SGE: return bool2bv(SMT->mkBVSge(L, R));
-        case CmpInst::ICMP_SGT: return bool2bv(SMT->mkBVSgt(L, R));
-        case CmpInst::ICMP_SLE: return bool2bv(SMT->mkBVSle(L, R));
-        case CmpInst::ICMP_SLT: return bool2bv(SMT->mkBVSlt(L, R));
-        case CmpInst::ICMP_UGE: return bool2bv(SMT->mkBVUge(L, R));
-        case CmpInst::ICMP_UGT: return bool2bv(SMT->mkBVUgt(L, R));
-        case CmpInst::ICMP_ULE: return bool2bv(SMT->mkBVUle(L, R));
-        case CmpInst::ICMP_ULT: return bool2bv(SMT->mkBVUlt(L, R));
+        case CmpInst::ICMP_EQ:  return bool2bv(SMT, SMT->mkEqual(L, R));
+        case CmpInst::ICMP_NE:  return bool2bv(SMT, SMT->mkNot(SMT->mkEqual(L, R)));
+        case CmpInst::ICMP_SGE: return bool2bv(SMT, SMT->mkBVSge(L, R));
+        case CmpInst::ICMP_SGT: return bool2bv(SMT, SMT->mkBVSgt(L, R));
+        case CmpInst::ICMP_SLE: return bool2bv(SMT, SMT->mkBVSle(L, R));
+        case CmpInst::ICMP_SLT: return bool2bv(SMT, SMT->mkBVSlt(L, R));
+        case CmpInst::ICMP_UGE: return bool2bv(SMT, SMT->mkBVUge(L, R));
+        case CmpInst::ICMP_UGT: return bool2bv(SMT, SMT->mkBVUgt(L, R));
+        case CmpInst::ICMP_ULE: return bool2bv(SMT, SMT->mkBVUle(L, R));
+        case CmpInst::ICMP_ULT: return bool2bv(SMT, SMT->mkBVUlt(L, R));
 		}
 	}
 
 	SMTExprRef visitSelectInst(SelectInst &I) {
 		return SMT->mkIte(
-			bv2bool(get(I.getCondition())),
+			bv2bool(SMT, get(I.getCondition())),
 			get(I.getTrueValue()),
 			get(I.getFalseValue())
 		);
@@ -255,17 +141,17 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 			switch (II->getIntrinsicID()) {
 			default: II->dump(); assert(0 && "Unknown overflow!");
 			case Intrinsic::sadd_with_overflow:
-				return mkBVSAddOverflow(L, R);
+				return mkBVSAddOverflow(SMT, L, R);
 			case Intrinsic::uadd_with_overflow:
-				return mkBVUAddOverflow(L, R);
+				return mkBVUAddOverflow(SMT, L, R);
 			case Intrinsic::ssub_with_overflow:
-				return mkBVSSubOverflow(L, R);
+				return mkBVSSubOverflow(SMT, L, R);
 			case Intrinsic::usub_with_overflow:
-				return mkBVUSubOverflow(L, R);
+				return mkBVUSubOverflow(SMT, L, R);
 			case Intrinsic::smul_with_overflow:
-				return mkBVSMulOverflow(L, R);
+				return mkBVSMulOverflow(SMT, L, R);
 			case Intrinsic::umul_with_overflow:
-				return mkBVUMulOverflow(L, R);
+				return mkBVUMulOverflow(SMT, L, R);
 			}
 		}
 		assert(I.getIndices()[0] == 1 && "FIXME!");
@@ -303,7 +189,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 				ConstOffset += ElemSize * C->getValue().sextOrTrunc(PtrSize);
 				continue;
 			}
-			SMTExprRef SIdx = get(V);
+		    SMTExprRef SIdx = get(V);
 			unsigned IdxSize = SMT->getSort(SIdx)->getBitvectorSortSize();
 			// Sometimes a 64-bit GEP's index is 32-bit.
 			if (IdxSize != PtrSize) {
@@ -311,7 +197,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
                     SMT->mkBVSignExt(PtrSize - IdxSize, SIdx) :
                     SMT->mkBVExtract(PtrSize - 1, 0, SIdx);
 			}
-            SMTExprRef SElemSize = mkBV(ElemSize);
+            SMTExprRef SElemSize = mkBV(SMT, ElemSize);
 			SMTExprRef LocalOffset = SMT->mkBVMul(SIdx, SElemSize);
 			SMTExprRef Offset = SMT->mkBVAdd(Offset, LocalOffset);
 		}
@@ -320,7 +206,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 			return Offset;
 
 		// Merge constant offset.
-		return SMT->mkBVAdd(Offset, mkBV(ConstOffset));
+		return SMT->mkBVAdd(Offset, mkBV(SMT, ConstOffset));
 	}
 
 	SMTExprRef visitBitCastInst(BitCastInst &I) {
@@ -343,6 +229,75 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 		return E;
 	}
 
+private:
+	SMTExprRef get(Value *V) {
+		return VG->get(V);
+	}
+
+	unsigned getBitWidth(Type *T) const {
+		return DL.getTypeSizeInBits(T);
+	}
+
+	unsigned getBitWidth(Value *V) const {
+		return getBitWidth(V->getType());
+	}
+
+    SMTExprRef mkBVFresh(Value *V) {
+        std::string Name;
+        {
+            raw_string_ostream OS(Name);
+            if (V->hasName())
+                OS << V->getName();
+            // Make name unique, e.g., undef.
+            OS << "@" << V;
+        }
+        SMTSortRef Sort = SMT->getBitvectorSort(getBitWidth(V));
+        return SMT->mkSymbol(Name.c_str(), Sort);
+    }
+
+    void addRangeConstraints(SMTExprRef E, MDNode *MD) {
+        // !range comes in pairs.
+        unsigned n = MD->getNumOperands();
+        assert(n % 2 == 0);
+        for (unsigned i = 0; i != n; i += 2) {
+            auto LoOp = dyn_cast<ConstantAsMetadata>(MD->getOperand(i));
+            if (!LoOp)
+                report_fatal_error("Bit set element offset must be a constant");
+            const APInt &Lo = cast<ConstantInt>(LoOp->getValue())->getValue();
+
+            auto HiOp = dyn_cast<ConstantAsMetadata>(MD->getOperand(i+1));
+            if (!HiOp)
+                report_fatal_error("Bit set element offset must be a constant");
+            const APInt &Hi = cast<ConstantInt>(HiOp->getValue())->getValue();
+
+            //const APInt &Lo = cast<ConstantInt>(MD->getOperand(i))->getValue();
+            //const APInt &Hi = cast<ConstantInt>(MD->getOperand(i + 1))->getValue();
+
+            // Ignore empty or full set.
+            if (Lo == Hi)
+                continue;
+            SMTExprRef Cmp0 = nullptr, Cmp1 = nullptr, Cond;
+            // Ignore >= 0.
+            if (!!Lo)
+                Cmp0 = SMT->mkBVUge(E, mkBV(SMT, Lo));
+            // Note that (< Hi) is not always correct.
+            // Need to ignore Hi == 0 (i.e., <= UMAX) or use (<= Hi - 1).
+            if (!!Hi) {
+                Cmp1 = SMT->mkBVUlt(E, mkBV(SMT, Hi));
+            }
+            if (!Cmp0) {
+                Cond = Cmp1;
+            } else if (!Cmp1) {
+                Cond = Cmp0;
+            } else {
+                if (Lo.ule(Hi))	// [Lo, Hi).
+                    Cond = SMT->mkBVAnd(Cmp0, Cmp1);
+                else	        // Wrap: [Lo, UMAX] union [0, Hi).
+                    Cond = SMT->mkBVOr(Cmp0, Cmp1);
+            }
+            SMT->addConstraint(Cond);
+        }
+    }
 }VV;
 
 #undef SMT
@@ -351,7 +306,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 } // anonymous namespace
 
 SMTExprRef ValueGen::get(Value *V) {
-	SMTExprRef E = Cache.lookup(V);
+    SMTExprRef E = Cache.lookup(V);
 	if (!E) {
 		E = VV.analyze(this, V);
 		Cache[V] = E;

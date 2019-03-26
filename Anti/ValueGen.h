@@ -1,20 +1,29 @@
 #pragma once
 
-#include <llvm/Support/SMTAPI.h>
 #include <llvm/ADT/DenseMap.h>
-#include <llvm/IR/DataLayout.h>
+#include <memory>
+
+namespace llvm {
+    class DataLayout;
+    class Value;
+    class Type;
+    class SMTExpr;
+    class SMTSolver;
+    using SMTExprRef = const SMTExpr *;
+    using SMTSolverRef = std::shared_ptr<SMTSolver>;
+}
 
 class ValueGen {
-public:
-	const llvm::DataLayout &DL;
-    llvm::SMTSolverRef Solver;
-
     using ValueExprMap = llvm::DenseMap<llvm::Value *, llvm::SMTExprRef>;
     using iterator = ValueExprMap::iterator;
 
 	ValueExprMap Cache;
 
-    ValueGen(const llvm::DataLayout &DL, llvm::SMTSolverRef Slover) : DL(DL), Solver(Solver) {}
+public:
+	const llvm::DataLayout &DL;
+    llvm::SMTSolverRef Solver;
+
+    ValueGen(const llvm::DataLayout &DL, llvm::SMTSolverRef Solver) : DL(DL), Solver(Solver) {}
 
     llvm::SMTExprRef get(llvm::Value *);
 
