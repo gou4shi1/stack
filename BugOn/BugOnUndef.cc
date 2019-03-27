@@ -1,11 +1,11 @@
-#define DEBUG_TYPE "bugon-undef"
-
 #include "BugOnUndef.h"
-#include "llvm/IR/CallSite.h"
+#include <llvm/IR/CallSite.h>
+
+#define DEBUG_TYPE "bugon-undef"
 
 using namespace llvm;
 
-namespace stack {
+namespace {
 
 bool isDeadArg(Instruction *I, unsigned Idx) {
 	CallSite CS(I);
@@ -29,6 +29,8 @@ bool isDeadRet(Function *F) {
             return false;
     }
 	return true;
+}
+
 }
 
 bool BugOnUndefPass::runOnInstruction(Instruction *I) {
@@ -56,5 +58,3 @@ bool BugOnUndefPass::runOnInstruction(Instruction *I) {
 	}
 	return false;
 }
-
-} // end stack namespace

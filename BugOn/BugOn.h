@@ -1,105 +1,81 @@
 #pragma once
 
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Dominators.h"
-
-namespace stack {
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/PassManager.h>
 
 llvm::Function *getBugOn(const llvm::Module *);
 llvm::Function *getOrInsertBugOn(llvm::Module *);
 
 class BugOnInst : public llvm::CallInst {
 public:
-	typedef llvm::CallInst CallInst;
-	typedef llvm::Function Function;
-	typedef llvm::StringRef StringRef;
-	typedef llvm::Value Value;
-
-	Value *getCondition() const { return getArgOperand(0); }
-	StringRef getAnnotation() const;
+    llvm::Value *getCondition() const { return getArgOperand(0); }
+    llvm::StringRef getAnnotation() const;
 
 	// For LLVM casts.
-	static bool classof(const CallInst *I) {
-		if (const Function *F = I->getCalledFunction())
+	static bool classof(const llvm::CallInst *I) {
+		if (const llvm::Function *F = I->getCalledFunction())
 			return getBugOn(F->getParent()) == F;
 		return false;
 	}
-	static bool classof(const Value *V) {
-		return llvm::isa<CallInst>(V) && classof(llvm::cast<CallInst>(V));
+	static bool classof(const llvm::Value *V) {
+		return llvm::isa<llvm::CallInst>(V) && classof(llvm::cast<llvm::CallInst>(V));
 	}
 };
 
 class BugOnPass {
-protected:
-    typedef llvm::PreservedAnalyses PreservedAnalyses;
-    typedef llvm::FunctionAnalysisManager FunctionAnalysisManager;
-	typedef llvm::DataLayout DataLayout;
-	typedef llvm::DominatorTree DominatorTree;
-	typedef llvm::IRBuilder<> BuilderTy;
-	typedef llvm::Value Value;
-	typedef llvm::Module Module;
-	typedef llvm::Function Function;
-	typedef llvm::BasicBlock BasicBlock;
-	typedef llvm::Instruction Instruction;
-	typedef llvm::IntegerType IntegerType;
-	typedef llvm::StringRef StringRef;
-	typedef llvm::DebugLoc DebugLoc;
-
-private:
-	Function *BugOn;
+    llvm::Function *BugOn;
 	unsigned int MD_bug;
-    BasicBlock *InsertBB;
-    BasicBlock::iterator InsertPt;
+    llvm::BasicBlock *InsertBB;
+    llvm::BasicBlock::iterator InsertPt;
 
-	Value *getUnderlyingObject(Value *);
-	Value *getAddressOperand(Value *, bool skipVolatile = false);
-	Value *getNonvolatileAddressOperand(Value *V) {
+    llvm::Value *getUnderlyingObject(llvm::Value *);
+    llvm::Value *getAddressOperand(llvm::Value *, bool skipVolatile = false);
+    llvm::Value *getNonvolatileAddressOperand(llvm::Value *V) {
 		return getAddressOperand(V, true);
 	}
 
 public:
-    virtual PreservedAnalyses run(Function &, FunctionAnalysisManager &);
+    virtual llvm::PreservedAnalyses run(llvm::Function &, llvm::FunctionAnalysisManager &);
 
-	static bool clearDebugLoc(Value *);
-	static bool recursivelyClearDebugLoc(Value *);
+	static bool clearDebugLoc(llvm::Value *);
+	static bool recursivelyClearDebugLoc(llvm::Value *);
 
-	Value *getNonvolatileBaseAddress(Value *V) {
-		if (Value *P = getNonvolatileAddressOperand(V))
+    llvm::Value *getNonvolatileBaseAddress(llvm::Value *V) {
+		if (llvm::Value *P = getNonvolatileAddressOperand(V))
 			return getUnderlyingObject(P);
 		return NULL;
 	}
 
 protected:
-	typedef BugOnPass super;
+    using super = BugOnPass;
+	using BuilderTy = llvm::IRBuilder<>;
 
-	BuilderTy *Builder;
-	const DataLayout *DL;
+    BuilderTy *Builder;
+	const llvm::DataLayout *DL;
 
-	virtual bool runOnInstruction(Instruction *) = 0;
-    bool runOnInstructionsOfFunction(Function &);
+	virtual bool runOnInstruction(llvm::Instruction *) = 0;
+    bool runOnInstructionsOfFunction(llvm::Function &);
 
-	bool insert(Value *, StringRef Bug);
-	bool insert(Value *, StringRef Bug, const DebugLoc &);
-	Module *getInsertModule();
+	bool insert(llvm::Value *, llvm::StringRef Bug);
+	bool insert(llvm::Value *, llvm::StringRef Bug, const llvm::DebugLoc &);
+    llvm::Module *getInsertModule();
     void backupInsertPoint();
     void restoreInsertPoint();
-    void setInsertPoint(Instruction *);
-    void setInsertPointAfter(Instruction *);
+    void setInsertPoint(llvm::Instruction *);
+    void setInsertPointAfter(llvm::Instruction *);
 
-	Value *createIsNull(Value *);
-	Value *createIsNotNull(Value *);
-	Value *createIsZero(Value *);
-	Value *createIsWrap(llvm::Intrinsic::ID, Value *, Value *);
-	Value *createIsSAddWrap(Value *, Value *);
-	Value *createIsUAddWrap(Value *, Value *);
-	Value *createIsSSubWrap(Value *, Value *);
-	Value *createIsUSubWrap(Value *, Value *);
-	Value *createIsSMulWrap(Value *, Value *);
-	Value *createIsUMulWrap(Value *, Value *);
-	Value *createIsSDivWrap(Value *, Value *);
-	Value *createAnd(Value *, Value *);
-	Value *createSExtOrTrunc(Value *, IntegerType *);
-	Value *createPointerEQ(Value *, Value *);
+	llvm::Value *createIsNull(llvm::Value *);
+	llvm::Value *createIsNotNull(llvm::Value *);
+	llvm::Value *createIsZero(llvm::Value *);
+	llvm::Value *createIsWrap(llvm::Intrinsic::ID, llvm::Value *, llvm::Value *);
+	llvm::Value *createIsSAddWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsUAddWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsSSubWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsUSubWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsSMulWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsUMulWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createIsSDivWrap(llvm::Value *, llvm::Value *);
+	llvm::Value *createAnd(llvm::Value *, llvm::Value *);
+	llvm::Value *createSExtOrTrunc(llvm::Value *, llvm::IntegerType *);
+	llvm::Value *createPointerEQ(llvm::Value *, llvm::Value *);
 };
-
-} // end stack namespace

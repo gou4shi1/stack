@@ -1,9 +1,8 @@
 #include "BugOnInt.h"
 #include "BugOnNull.h"
 #include "BugOnUndef.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
 
 using namespace llvm;
 
@@ -16,9 +15,9 @@ llvmGetPassPluginInfo() {
         [](StringRef PassName, FunctionPassManager &FPM,
            ArrayRef<PassBuilder::PipelineElement>) {
           if(PassName == "bugon"){
-            FPM.addPass(stack::BugOnIntPass());
-            FPM.addPass(stack::BugOnNullPass());
-            FPM.addPass(stack::BugOnUndefPass());
+            FPM.addPass(BugOnIntPass());
+            FPM.addPass(BugOnNullPass());
+            FPM.addPass(BugOnUndefPass());
             return true;
           }
           return false;

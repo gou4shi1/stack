@@ -3,17 +3,13 @@
 #include "BugOn.h"
 #include <llvm/ADT/SmallPtrSet.h>
 
-namespace stack {
-
 class BugOnNullPass : public BugOnPass {
-    typedef llvm::SmallPtrSet<Value *, 32> SmallPtrSet;
-
-	bool runOnInstruction(Instruction *) override;
+    using SmallPtrSet = llvm::SmallPtrSet<llvm::Value *, 32>;
 
 	SmallPtrSet Visited;
 
-public:
-    static StringRef name() { return "bugon-null"; }
-};
+	bool runOnInstruction(llvm::Instruction *) override;
 
-} // end stack namespace
+public:
+    static llvm::StringRef name() { return "bugon-null"; }
+};

@@ -1,10 +1,8 @@
-#define DEBUG_TYPE "bugon-int"
-
 #include "BugOnInt.h"
 
-using namespace llvm;
+#define DEBUG_TYPE "bugon-int"
 
-namespace stack {
+using namespace llvm;
 
 bool BugOnIntPass::runOnInstruction(Instruction *I) {
 	BinaryOperator *BO = dyn_cast<BinaryOperator>(I);
@@ -70,5 +68,3 @@ bool BugOnIntPass::visitShiftOperator(IntegerType *T, Value *R, const char *Bug)
 	Value *V = Builder->CreateICmpUGE(R, BitWidth);
 	return insert(V, Bug);
 }
-
-} // end stack namespace

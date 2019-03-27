@@ -1,13 +1,11 @@
 #include "BugOn.h"
 //#include "Diagnostic.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/Analysis/ValueTracking.h"
-#include "llvm/Analysis/Loads.h"
-#include "llvm/IR/InstIterator.h"
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/Analysis/ValueTracking.h>
+#include <llvm/Analysis/Loads.h>
+#include <llvm/IR/InstIterator.h>
 
 using namespace llvm;
-
-namespace stack {
 
 #define OPT_BUGON "opt.bugon"
 
@@ -245,5 +243,3 @@ Value *BugOnPass::createPointerEQ(Value *V0, Value *V1) {
 		return Builder->getTrue();
 	return Builder->CreateICmpEQ(V0, Builder->CreatePointerCast(V1, V0->getType()));
 }
-
-} // end stack namespace

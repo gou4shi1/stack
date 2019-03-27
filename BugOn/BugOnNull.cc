@@ -1,10 +1,8 @@
-#define DEBUG_TYPE "bugon-null"
-
 #include "BugOnNull.h"
 
-using namespace llvm;
+#define DEBUG_TYPE "bugon-null"
 
-namespace stack {
+using namespace llvm;
 
 bool BugOnNullPass::runOnInstruction(Instruction *I) {
     if (I->isTerminator()) {
@@ -18,5 +16,3 @@ bool BugOnNullPass::runOnInstruction(Instruction *I) {
         return false;
 	return insert(createIsNull(Base), "null pointer dereference");
 }
-
-} // end stack namespace
