@@ -7,5 +7,6 @@ add_llvm_library(libStackPasses MODULE
     SMTHelper.cc
     ValueGen.cc
     PathGen.cc
+    BugFree.cc
     Passes.cc
     )

@@ -21,7 +21,7 @@ bool isDeadArg(Instruction *I, unsigned Idx) {
 }
 
 bool isDeadRet(Function *F) {
-    for (auto &U: F->uses()) {
+    for (const auto &U: F->uses()) {
         CallSite CS(U);
 		if (!CS)
             return false;

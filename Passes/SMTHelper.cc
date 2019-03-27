@@ -5,46 +5,54 @@
 
 using namespace llvm;
 
-SMTExprRef mkBV(SMTSolverRef SMT, const APInt &Int) {
-    return SMT->mkBitvector(APSInt(Int), Int.getBitWidth());
+SMTExprRef mkBV(SMTSolverRef Solver, const APInt &Int) {
+    return Solver->mkBitvector(APSInt(Int), Int.getBitWidth());
 }
 
-SMTExprRef mkBVTrue(SMTSolverRef SMT) {
-    return mkBV(SMT, APInt(1, 1));
+SMTExprRef mkBVTrue(SMTSolverRef Solver) {
+    return mkBV(Solver, APInt(1, 1));
 }
 
-SMTExprRef mkBVFalse(SMTSolverRef SMT) {
-    return mkBV(SMT, APInt(1, 0));
+SMTExprRef mkBVFalse(SMTSolverRef Solver) {
+    return mkBV(Solver, APInt(1, 0));
 }
 
-SMTExprRef bool2bv(SMTSolverRef SMT, const SMTExprRef &Bool) {
-    return SMT->mkIte(Bool, mkBVTrue(SMT), mkBVFalse(SMT));
+SMTExprRef bool2bv(SMTSolverRef Solver, const SMTExprRef &Bool) {
+    return Solver->mkIte(Bool, mkBVTrue(Solver), mkBVFalse(Solver));
 }
 
-SMTExprRef bv2bool(SMTSolverRef SMT, const SMTExprRef &BV) {
-    return SMT->mkEqual(BV, mkBVTrue(SMT));
+SMTExprRef bv2bool(SMTSolverRef Solver, const SMTExprRef &BV) {
+    return Solver->mkEqual(BV, mkBVTrue(Solver));
 }
 
-SMTExprRef mkBVSAddOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkOr(SMT->mkNot(SMT->mkBVAddNoOverflow(LHS, RHS, true)), SMT->mkNot(SMT->mkBVAddNoUnderflow(LHS, RHS))));
+SMTExprRef mkBVSAddOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkOr(Solver->mkNot(Solver->mkBVAddNoOverflow(LHS, RHS, true)), Solver->mkNot(Solver->mkBVAddNoUnderflow(LHS, RHS))));
 }
 
-SMTExprRef mkBVUAddOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkNot(SMT->mkBVAddNoOverflow(LHS, RHS, false)));
+SMTExprRef mkBVUAddOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkNot(Solver->mkBVAddNoOverflow(LHS, RHS, false)));
 }
 
-SMTExprRef mkBVSSubOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkOr(SMT->mkNot(SMT->mkBVSubNoOverflow(LHS, RHS)), SMT->mkNot(SMT->mkBVSubNoUnderflow(LHS, RHS, true))));
+SMTExprRef mkBVSSubOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkOr(Solver->mkNot(Solver->mkBVSubNoOverflow(LHS, RHS)), Solver->mkNot(Solver->mkBVSubNoUnderflow(LHS, RHS, true))));
 }
 
-SMTExprRef mkBVUSubOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkNot(SMT->mkBVSubNoUnderflow(LHS, RHS, false)));
+SMTExprRef mkBVUSubOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkNot(Solver->mkBVSubNoUnderflow(LHS, RHS, false)));
 }
 
-SMTExprRef mkBVSMulOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkOr(SMT->mkNot(SMT->mkBVMulNoOverflow(LHS, RHS, true)), SMT->mkNot(SMT->mkBVMulNoUnderflow(LHS, RHS))));
+SMTExprRef mkBVSMulOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkOr(Solver->mkNot(Solver->mkBVMulNoOverflow(LHS, RHS, true)), Solver->mkNot(Solver->mkBVMulNoUnderflow(LHS, RHS))));
 }
 
-SMTExprRef mkBVUMulOverflow(SMTSolverRef SMT, const SMTExprRef &LHS, const SMTExprRef &RHS) {
-    return bool2bv(SMT, SMT->mkNot(SMT->mkBVMulNoOverflow(LHS, RHS, false)));
+SMTExprRef mkBVUMulOverflow(SMTSolverRef Solver, const SMTExprRef &LHS, const SMTExprRef &RHS) {
+    return bool2bv(Solver, Solver->mkNot(Solver->mkBVMulNoOverflow(LHS, RHS, false)));
+}
+
+Optional<bool> querySMTExpr(llvm::SMTSolverRef Solver, const llvm::SMTExprRef &Q) {
+    Solver->push();
+    Solver->addConstraint(Q);
+    Optional<bool> res = Solver->check();
+    Solver->pop();
+    return res;
 }

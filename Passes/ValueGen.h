@@ -1,15 +1,14 @@
 #pragma once
 
 #include <llvm/ADT/DenseMap.h>
-#include <memory>
 
 namespace llvm {
     class DataLayout;
     class Value;
     class Type;
     class SMTExpr;
-    class SMTSolver;
     using SMTExprRef = const SMTExpr *;
+    class SMTSolver;
     using SMTSolverRef = std::shared_ptr<SMTSolver>;
 }
 
@@ -18,12 +17,13 @@ class ValueGen {
     using iterator = ValueExprMap::iterator;
 
 	ValueExprMap Cache;
+    llvm::SMTSolverRef Solver;
+	const llvm::DataLayout *DL;
+
+    friend class ValueVisitor;
 
 public:
-	const llvm::DataLayout &DL;
-    llvm::SMTSolverRef Solver;
-
-    ValueGen(const llvm::DataLayout &DL, llvm::SMTSolverRef Solver) : DL(DL), Solver(Solver) {}
+    ValueGen(llvm::SMTSolverRef Solver, const llvm::DataLayout *DL) : Solver(Solver), DL(DL) {}
 
     llvm::SMTExprRef get(llvm::Value *);
 
@@ -33,3 +33,5 @@ public:
     static bool isAnalyzable(llvm::Type *T);
     static bool isAnalyzable(llvm::Value *V);
 };
+
+using ValueGenRef = std::shared_ptr<ValueGen>;

@@ -7,13 +7,11 @@
 
 using namespace llvm;
 
-namespace {
-
-#define SMT    VG->Solver
-#define DL     VG->DL
-
 class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
 	ValueGen *VG;
+
+#define Solver  VG->Solver
+#define DL      VG->DL
 
 public:
 	SMTExprRef analyze(ValueGen *TheVG, Value *V) {
@@ -33,11 +31,11 @@ public:
 	SMTExprRef visitConstant(Constant *C) {
         if (ConstantInt *CI = dyn_cast<ConstantInt>(C)) {
             const APInt &Int = CI->getValue();
-            return mkBV(SMT, Int);
+            return mkBV(Solver, Int);
         }
         if (isa<ConstantPointerNull>(C)) {
             unsigned width = getBitWidth(C);
-            return mkBV(SMT, APInt::getNullValue(width));
+            return mkBV(Solver, APInt::getNullValue(width));
         }
 		if (GEPOperator *GEP = dyn_cast<GEPOperator>(C))
 			return visitGEPOperator(*GEP);
@@ -54,38 +52,38 @@ public:
 
 	SMTExprRef visitTruncInst(TruncInst &I) {
 		unsigned DstWidth = getBitWidth(I.getDestTy());
-        return SMT->mkBVExtract(DstWidth - 1, 0, get(I.getOperand(0)));
+        return Solver->mkBVExtract(DstWidth - 1, 0, get(I.getOperand(0)));
 	}
 
 	SMTExprRef visitZExtInst(ZExtInst &I) {
 		unsigned DstWidth = getBitWidth(I.getDestTy());
 		unsigned SrcWidth = getBitWidth(I.getSrcTy());
-        return SMT->mkBVZeroExt(DstWidth - SrcWidth, get(I.getOperand(0)));
+        return Solver->mkBVZeroExt(DstWidth - SrcWidth, get(I.getOperand(0)));
 	}
 
 	SMTExprRef visitSExtInst(SExtInst &I) {
 		unsigned DstWidth = getBitWidth(I.getDestTy());
 		unsigned SrcWidth = getBitWidth(I.getSrcTy());
-        return SMT->mkBVSignExt(DstWidth - SrcWidth, get(I.getOperand(0)));
+        return Solver->mkBVSignExt(DstWidth - SrcWidth, get(I.getOperand(0)));
 	}
 
 	SMTExprRef visitBinaryOperator(BinaryOperator &I) {
 		SMTExprRef L = get(I.getOperand(0)), R = get(I.getOperand(1));
 		switch (I.getOpcode()) {
         default: assert(0);
-        case Instruction::Add:  return SMT->mkBVAdd(L, R);
-        case Instruction::Sub:  return SMT->mkBVSub(L, R);
-        case Instruction::Mul:  return SMT->mkBVMul(L, R);
-        case Instruction::UDiv: return SMT->mkBVUDiv(L, R);
-        case Instruction::SDiv: return SMT->mkBVSDiv(L, R);
-        case Instruction::URem: return SMT->mkBVURem(L, R);
-        case Instruction::SRem: return SMT->mkBVSRem(L, R);
-        case Instruction::Shl:  return SMT->mkBVShl(L, R);
-        case Instruction::LShr: return SMT->mkBVLshr(L, R);
-        case Instruction::AShr: return SMT->mkBVAshr(L, R);
-        case Instruction::And:  return SMT->mkBVAnd(L, R);
-        case Instruction::Or:   return SMT->mkBVOr(L, R);
-        case Instruction::Xor:  return SMT->mkBVXor(L, R);
+        case Instruction::Add:  return Solver->mkBVAdd(L, R);
+        case Instruction::Sub:  return Solver->mkBVSub(L, R);
+        case Instruction::Mul:  return Solver->mkBVMul(L, R);
+        case Instruction::UDiv: return Solver->mkBVUDiv(L, R);
+        case Instruction::SDiv: return Solver->mkBVSDiv(L, R);
+        case Instruction::URem: return Solver->mkBVURem(L, R);
+        case Instruction::SRem: return Solver->mkBVSRem(L, R);
+        case Instruction::Shl:  return Solver->mkBVShl(L, R);
+        case Instruction::LShr: return Solver->mkBVLshr(L, R);
+        case Instruction::AShr: return Solver->mkBVAshr(L, R);
+        case Instruction::And:  return Solver->mkBVAnd(L, R);
+        case Instruction::Or:   return Solver->mkBVOr(L, R);
+        case Instruction::Xor:  return Solver->mkBVXor(L, R);
 		}
 	}
 
@@ -93,22 +91,22 @@ public:
 		SMTExprRef L = get(I.getOperand(0)), R = get(I.getOperand(1));
 		switch (I.getPredicate()) {
         default: assert(0);
-        case CmpInst::ICMP_EQ:  return bool2bv(SMT, SMT->mkEqual(L, R));
-        case CmpInst::ICMP_NE:  return bool2bv(SMT, SMT->mkNot(SMT->mkEqual(L, R)));
-        case CmpInst::ICMP_SGE: return bool2bv(SMT, SMT->mkBVSge(L, R));
-        case CmpInst::ICMP_SGT: return bool2bv(SMT, SMT->mkBVSgt(L, R));
-        case CmpInst::ICMP_SLE: return bool2bv(SMT, SMT->mkBVSle(L, R));
-        case CmpInst::ICMP_SLT: return bool2bv(SMT, SMT->mkBVSlt(L, R));
-        case CmpInst::ICMP_UGE: return bool2bv(SMT, SMT->mkBVUge(L, R));
-        case CmpInst::ICMP_UGT: return bool2bv(SMT, SMT->mkBVUgt(L, R));
-        case CmpInst::ICMP_ULE: return bool2bv(SMT, SMT->mkBVUle(L, R));
-        case CmpInst::ICMP_ULT: return bool2bv(SMT, SMT->mkBVUlt(L, R));
+        case CmpInst::ICMP_EQ:  return bool2bv(Solver, Solver->mkEqual(L, R));
+        case CmpInst::ICMP_NE:  return bool2bv(Solver, Solver->mkNot(Solver->mkEqual(L, R)));
+        case CmpInst::ICMP_SGE: return bool2bv(Solver, Solver->mkBVSge(L, R));
+        case CmpInst::ICMP_SGT: return bool2bv(Solver, Solver->mkBVSgt(L, R));
+        case CmpInst::ICMP_SLE: return bool2bv(Solver, Solver->mkBVSle(L, R));
+        case CmpInst::ICMP_SLT: return bool2bv(Solver, Solver->mkBVSlt(L, R));
+        case CmpInst::ICMP_UGE: return bool2bv(Solver, Solver->mkBVUge(L, R));
+        case CmpInst::ICMP_UGT: return bool2bv(Solver, Solver->mkBVUgt(L, R));
+        case CmpInst::ICMP_ULE: return bool2bv(Solver, Solver->mkBVUle(L, R));
+        case CmpInst::ICMP_ULT: return bool2bv(Solver, Solver->mkBVUlt(L, R));
 		}
 	}
 
 	SMTExprRef visitSelectInst(SelectInst &I) {
-		return SMT->mkIte(
-			bv2bool(SMT, get(I.getCondition())),
+		return Solver->mkIte(
+			bv2bool(Solver, get(I.getCondition())),
 			get(I.getTrueValue()),
 			get(I.getFalseValue())
 		);
@@ -129,29 +127,29 @@ public:
 			default: II->dump(); assert(0 && "Unknown overflow!");
 			case Intrinsic::sadd_with_overflow:
 			case Intrinsic::uadd_with_overflow:
-				return SMT->mkBVAdd(L, R);
+				return Solver->mkBVAdd(L, R);
 			case Intrinsic::ssub_with_overflow:
 			case Intrinsic::usub_with_overflow:
-				return SMT->mkBVSub(L, R);
+				return Solver->mkBVSub(L, R);
 			case Intrinsic::smul_with_overflow:
 			case Intrinsic::umul_with_overflow:
-				return SMT->mkBVMul(L, R);
+				return Solver->mkBVMul(L, R);
 			}
 		case 1:
 			switch (II->getIntrinsicID()) {
 			default: II->dump(); assert(0 && "Unknown overflow!");
 			case Intrinsic::sadd_with_overflow:
-				return mkBVSAddOverflow(SMT, L, R);
+				return mkBVSAddOverflow(Solver, L, R);
 			case Intrinsic::uadd_with_overflow:
-				return mkBVUAddOverflow(SMT, L, R);
+				return mkBVUAddOverflow(Solver, L, R);
 			case Intrinsic::ssub_with_overflow:
-				return mkBVSSubOverflow(SMT, L, R);
+				return mkBVSSubOverflow(Solver, L, R);
 			case Intrinsic::usub_with_overflow:
-				return mkBVUSubOverflow(SMT, L, R);
+				return mkBVUSubOverflow(Solver, L, R);
 			case Intrinsic::smul_with_overflow:
-				return mkBVSMulOverflow(SMT, L, R);
+				return mkBVSMulOverflow(Solver, L, R);
 			case Intrinsic::umul_with_overflow:
-				return mkBVUMulOverflow(SMT, L, R);
+				return mkBVUMulOverflow(Solver, L, R);
 			}
 		}
 		assert(I.getIndices()[0] == 1 && "FIXME!");
@@ -163,7 +161,7 @@ public:
 	}
 
 	SMTExprRef visitGEPOperator(GEPOperator &GEP) {
-		unsigned PtrSize = DL.getPointerSizeInBits(/*GEP.getPointerAddressSpace()*/);
+		unsigned PtrSize = DL->getPointerSizeInBits(/*GEP.getPointerAddressSpace()*/);
 		// Start from base.
 		SMTExprRef Offset = get(GEP.getPointerOperand());
 		APInt ConstOffset = APInt::getNullValue(PtrSize);
@@ -179,34 +177,34 @@ public:
 			if (StructType *ST = dyn_cast<StructType>(GTI.getIndexedType())) {
 				assert(C);
 				unsigned FieldNo = C->getZExtValue();
-				ConstOffset = ConstOffset + DL.getStructLayout(ST)->getElementOffset(FieldNo);
+				ConstOffset = ConstOffset + DL->getStructLayout(ST)->getElementOffset(FieldNo);
 				continue;
 			}
 			// For an array, add the scaled element offset.
-			APInt ElemSize(PtrSize, DL.getTypeAllocSize(GTI.getIndexedType()));
+			APInt ElemSize(PtrSize, DL->getTypeAllocSize(GTI.getIndexedType()));
 			if (C) {
 				// GEP index can be sign-extended.
 				ConstOffset += ElemSize * C->getValue().sextOrTrunc(PtrSize);
 				continue;
 			}
 		    SMTExprRef SIdx = get(V);
-			unsigned IdxSize = SMT->getSort(SIdx)->getBitvectorSortSize();
+			unsigned IdxSize = Solver->getSort(SIdx)->getBitvectorSortSize();
 			// Sometimes a 64-bit GEP's index is 32-bit.
 			if (IdxSize != PtrSize) {
                 SIdx = IdxSize < PtrSize ?
-                    SMT->mkBVSignExt(PtrSize - IdxSize, SIdx) :
-                    SMT->mkBVExtract(PtrSize - 1, 0, SIdx);
+                    Solver->mkBVSignExt(PtrSize - IdxSize, SIdx) :
+                    Solver->mkBVExtract(PtrSize - 1, 0, SIdx);
 			}
-            SMTExprRef SElemSize = mkBV(SMT, ElemSize);
-			SMTExprRef LocalOffset = SMT->mkBVMul(SIdx, SElemSize);
-			SMTExprRef Offset = SMT->mkBVAdd(Offset, LocalOffset);
+            SMTExprRef SElemSize = mkBV(Solver, ElemSize);
+			SMTExprRef LocalOffset = Solver->mkBVMul(SIdx, SElemSize);
+			SMTExprRef Offset = Solver->mkBVAdd(Offset, LocalOffset);
 		}
 
 		if (!ConstOffset)
 			return Offset;
 
 		// Merge constant offset.
-		return SMT->mkBVAdd(Offset, mkBV(SMT, ConstOffset));
+		return Solver->mkBVAdd(Offset, mkBV(Solver, ConstOffset));
 	}
 
 	SMTExprRef visitBitCastInst(BitCastInst &I) {
@@ -223,9 +221,9 @@ public:
 		unsigned PtrSize = getBitWidth(V);
 		unsigned IntSize = getBitWidth(&I);
 		if (IntSize > PtrSize)
-			return SMT->mkBVZeroExt(IntSize - PtrSize, E);
+			return Solver->mkBVZeroExt(IntSize - PtrSize, E);
 		if (IntSize < PtrSize)
-			return SMT->mkBVExtract(IntSize - 1, 0, E);
+			return Solver->mkBVExtract(IntSize - 1, 0, E);
 		return E;
 	}
 
@@ -235,7 +233,7 @@ private:
 	}
 
 	unsigned getBitWidth(Type *T) const {
-		return DL.getTypeSizeInBits(T);
+		return DL->getTypeSizeInBits(T);
 	}
 
 	unsigned getBitWidth(Value *V) const {
@@ -251,8 +249,8 @@ private:
             // Make name unique, e.g., undef.
             OS << "@" << V;
         }
-        SMTSortRef Sort = SMT->getBitvectorSort(getBitWidth(V));
-        return SMT->mkSymbol(Name.c_str(), Sort);
+        SMTSortRef Sort = Solver->getBitvectorSort(getBitWidth(V));
+        return Solver->mkSymbol(Name.c_str(), Sort);
     }
 
     void addRangeConstraints(SMTExprRef E, MDNode *MD) {
@@ -279,11 +277,11 @@ private:
             SMTExprRef Cmp0 = nullptr, Cmp1 = nullptr, Cond;
             // Ignore >= 0.
             if (!!Lo)
-                Cmp0 = SMT->mkBVUge(E, mkBV(SMT, Lo));
+                Cmp0 = Solver->mkBVUge(E, mkBV(Solver, Lo));
             // Note that (< Hi) is not always correct.
             // Need to ignore Hi == 0 (i.e., <= UMAX) or use (<= Hi - 1).
             if (!!Hi) {
-                Cmp1 = SMT->mkBVUlt(E, mkBV(SMT, Hi));
+                Cmp1 = Solver->mkBVUlt(E, mkBV(Solver, Hi));
             }
             if (!Cmp0) {
                 Cond = Cmp1;
@@ -291,26 +289,26 @@ private:
                 Cond = Cmp0;
             } else {
                 if (Lo.ule(Hi))	// [Lo, Hi).
-                    Cond = SMT->mkBVAnd(Cmp0, Cmp1);
+                    Cond = Solver->mkBVAnd(Cmp0, Cmp1);
                 else	        // Wrap: [Lo, UMAX] union [0, Hi).
-                    Cond = SMT->mkBVOr(Cmp0, Cmp1);
+                    Cond = Solver->mkBVOr(Cmp0, Cmp1);
             }
-            SMT->addConstraint(Cond);
+            Solver->addConstraint(Cond);
         }
     }
-}VV;
-
-#undef SMT
+#undef Solver
 #undef DL
+};
 
-} // anonymous namespace
+namespace {
+    ValueVisitor VV;
+}
 
 SMTExprRef ValueGen::get(Value *V) {
-    SMTExprRef E = Cache.lookup(V);
-	if (!E) {
-		E = VV.analyze(this, V);
-		Cache[V] = E;
-	}
+    if (Cache.count(V))
+        return Cache.lookup(V);
+    SMTExprRef E = VV.analyze(this, V);
+    Cache[V] = E;
 	assert(E);
 	return E;
 }

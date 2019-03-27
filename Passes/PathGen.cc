@@ -7,9 +7,7 @@
 
 using namespace llvm;
 
-#define SMT VG.Solver
-
-static BasicBlock *findCommonDominator(BasicBlock *BB, DominatorTree *DT) {
+static BasicBlock *findCommonDominator(BasicBlock *BB, const DominatorTree *DT) {
 	BasicBlock *Dom = *pred_begin(BB);
     for (const auto &Pred: predecessors(BB)) {
 		Dom = DT->findNearestCommonDominator(Dom, Pred);
@@ -18,34 +16,32 @@ static BasicBlock *findCommonDominator(BasicBlock *BB, DominatorTree *DT) {
 }
 
 SMTExprRef PathGen::get(BasicBlock *BB) {
-	SMTExprRef G = Cache.lookup(BB);
-	if (G)
-		return G;
+    if (Cache.count(BB))
+        return Cache.lookup(BB);
+	SMTExprRef G;
 	// Entry block has true guard.
 	if (BB == &BB->getParent()->getEntryBlock()) {
-		G = mkBVTrue(SMT);
+		G = mkBVTrue(Solver);
 		Cache[BB] = G;
 		return G;
 	}
-	if (DT) {
-		// Fall back to common ancestors if any back edges.
-        for (const auto &Pred: predecessors(BB)) {
-            if (isBackedge(Pred, BB))
-				return get(findCommonDominator(BB, DT));
-        }
-	}
+    // Fall back to common ancestors if any back edges.
+    for (const auto &Pred: predecessors(BB)) {
+        if (isBackedge(Pred, BB))
+            return get(findCommonDominator(BB, DT));
+    }
 	// The guard is the disjunction of predecessors' guards.
 	// Initialize to false.
-	G = mkBVFalse(SMT);
+	G = mkBVFalse(Solver);
     for (const auto &Pred: predecessors(BB)) {
-		// Skip back edges.
-		if (!DT && isBackedge(Pred, BB))
-			continue;
+        // Skip back edges.
+        // if (!DT && isBackedge(Pred, BB))
+        //     continue;
 		SMTExprRef Term = getTermGuard(Pred->getTerminator(), BB);
 		SMTExprRef PN = getPHIGuard(BB, Pred);
-		SMTExprRef TermWithPN = SMT->mkBVAdd(Term, PN);
-		SMTExprRef Br = SMT->mkBVAnd(TermWithPN, get(Pred));
-		G = SMT->mkBVOr(G, Br);
+		SMTExprRef TermWithPN = Solver->mkBVAdd(Term, PN);
+		SMTExprRef Br = Solver->mkBVAnd(TermWithPN, get(Pred));
+		G = Solver->mkBVOr(G, Br);
 	}
 	Cache[BB] = G;
 	return G;
@@ -57,7 +53,7 @@ bool PathGen::isBackedge(llvm::BasicBlock *From, llvm::BasicBlock *To) {
 }
 
 SMTExprRef PathGen::getPHIGuard(BasicBlock *BB, BasicBlock *Pred) {
-	SMTExprRef E = mkBVTrue(SMT);
+	SMTExprRef E = mkBVTrue(Solver);
     for (auto i = BB->begin(), e = BB->end(); i != e; ++i) {
 		PHINode *I = dyn_cast<PHINode>(i);
 		if (!I)
@@ -70,8 +66,8 @@ SMTExprRef PathGen::getPHIGuard(BasicBlock *BB, BasicBlock *Pred) {
 		if (!ValueGen::isAnalyzable(V))
 			continue;
 		// Generate I == V.
-		SMTExprRef PN = bool2bv(SMT, SMT->mkEqual(VG.get(I), VG.get(V)));
-		E = SMT->mkBVAnd(E, PN);
+		SMTExprRef PN = bool2bv(Solver, Solver->mkEqual(VG->get(I), VG->get(V)));
+		E = Solver->mkBVAnd(E, PN);
 	}
 	return E;
 }
@@ -85,45 +81,45 @@ SMTExprRef PathGen::getTermGuard(Instruction *I, BasicBlock *BB) {
 		return getTermGuard(cast<SwitchInst>(I), BB);
 	case Instruction::IndirectBr:
 	case Instruction::Invoke:
-		return mkBVTrue(SMT);
+		return mkBVTrue(Solver);
 	}
 }
 
 SMTExprRef PathGen::getTermGuard(BranchInst *I, BasicBlock *BB) {
 	if (I->isUnconditional())
-		return mkBVTrue(SMT);
+		return mkBVTrue(Solver);
 	// true branch.
-	SMTExprRef E = VG.get(I->getCondition());
+	SMTExprRef E = VG->get(I->getCondition());
 	// false branch.
 	if (I->getSuccessor(0) != BB) {
 		assert(I->getSuccessor(1) == BB);
-		SMTExprRef E = SMT->mkBVNot(E);
+		SMTExprRef E = Solver->mkBVNot(E);
 	}
 	return E;
 }
 
 SMTExprRef PathGen::getTermGuard(SwitchInst *I, BasicBlock *BB) {
-	SMTExprRef L = VG.get(I->getCondition());
+	SMTExprRef L = VG->get(I->getCondition());
 	SwitchInst::CaseIt i = I->case_begin(), e = I->case_end();
 	if (I->getDefaultDest() != BB) {
 		// Find all x = C_i for BB.
-		SMTExprRef E = mkBVFalse(SMT);
+		SMTExprRef E = mkBVFalse(Solver);
         for (const auto &Case: I->cases()) {
 			if (Case.getCaseSuccessor() == BB) {
 				ConstantInt *CI = Case.getCaseValue();
-				SMTExprRef Cond = bool2bv(SMT, SMT->mkEqual(L, VG.get(CI)));
-				E = SMT->mkBVOr(E, Cond);
+				SMTExprRef Cond = bool2bv(Solver, Solver->mkEqual(L, VG->get(CI)));
+				E = Solver->mkBVOr(E, Cond);
 			}
 		}
 		return E;
 	}
 	// Compute guard for the default case.
 	// i starts from 1; 0 is reserved for the default.
-	SMTExprRef E = mkBVFalse(SMT);
+	SMTExprRef E = mkBVFalse(Solver);
     for (const auto &Case: I->cases()) {
         ConstantInt *CI = Case.getCaseValue();
-        SMTExprRef Cond = bool2bv(SMT, SMT->mkEqual(L, VG.get(CI)));
-        E = SMT->mkBVOr(E, Cond);
+        SMTExprRef Cond = bool2bv(Solver, Solver->mkEqual(L, VG->get(CI)));
+        E = Solver->mkBVOr(E, Cond);
     }
-	return SMT->mkBVNot(E);
+	return Solver->mkBVNot(E);
 }

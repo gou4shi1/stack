@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory>
+#include <llvm/ADT/Optional.h>
 
 namespace llvm {
     class APInt;
@@ -23,3 +23,4 @@ llvm::SMTExprRef mkBVSSubOverflow(llvm::SMTSolverRef, const llvm::SMTExprRef &, 
 llvm::SMTExprRef mkBVUSubOverflow(llvm::SMTSolverRef, const llvm::SMTExprRef &, const llvm::SMTExprRef &);
 llvm::SMTExprRef mkBVSMulOverflow(llvm::SMTSolverRef, const llvm::SMTExprRef &, const llvm::SMTExprRef &);
 llvm::SMTExprRef mkBVUMulOverflow(llvm::SMTSolverRef, const llvm::SMTExprRef &, const llvm::SMTExprRef &);
+llvm::Optional<bool> querySMTExpr(llvm::SMTSolverRef, const llvm::SMTExprRef &);
