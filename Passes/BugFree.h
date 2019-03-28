@@ -41,7 +41,7 @@ protected:
     PathGenRef PG;
 	// Diagnostic Diag;
 
-	virtual bool runOnFunction(llvm::Function &) = 0;
+	virtual bool runOnFunction(llvm::Function &, llvm::FunctionAnalysisManager &) = 0;
 
 	// Call if CFG has changed.
 	void recalculate(llvm::Function &F);

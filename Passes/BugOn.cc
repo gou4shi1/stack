@@ -1,6 +1,5 @@
 #include "BugOn.h"
 //#include "Diagnostic.h"
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/Analysis/Loads.h>
 #include <llvm/IR/InstIterator.h>

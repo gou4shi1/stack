@@ -5,8 +5,6 @@
 #include <llvm/ADT/Optional.h>
 #include <llvm/Analysis/CFG.h>
 #include <llvm/Support/SMTAPI.h>
-#include <llvm/Support/CommandLine.h>
-#include <llvm/Support/Debug.h>
 // #include <sys/mman.h>
 // #include <cxxabi.h>
 // #include <stdlib.h>
@@ -53,7 +51,6 @@ static std::string demangle(Function &F) {
 	return Name;
 }
 */
-
 void BugFreePass::calculateBackedgesAndInLoopBlocks(Function &F) {
     Backedges.clear();
     isBlockInLoop.clear();
@@ -89,9 +86,10 @@ bool BugFreePass::initialize(Function &F, FunctionAnalysisManager &FAM) {
 }
 
 PreservedAnalyses BugFreePass::run(Function &F, FunctionAnalysisManager &FAM) {
-    if (initialize(F, FAM))
+    if (!initialize(F, FAM))
         return PreservedAnalyses::all();
-	bool Changed = runOnFunction(F);
+	bool Changed = runOnFunction(F, FAM);
+    // TODO: preserve more analyses
 	return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
 }
 
@@ -143,9 +141,9 @@ SMTExprRef BugFreePass::getBugFreeDelta(BasicBlock *BB) {
 
 Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E, SMTExprRef Delta) {
     SMTExprRef Q = Solver->mkBVAnd(E, Delta);
-    Optional<bool> res = querySMTExpr(Solver, Q);
-    if (!res.hasValue() || res.getValue())
-        return res;
+    Optional<bool> sat = queryBV(Solver, Q);
+    if (!sat.hasValue() || sat.getValue())
+        return sat;
     // if (!Buffer || Status != SMT_UNSAT)
     // 	return Status;
 	unsigned n = Assertions.size();
@@ -157,9 +155,9 @@ Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E, SMTExprRef Delta
 		// Mask out this bugon and see if still unsat.
 		I = nullptr;
 		SMTExprRef Q = Solver->mkBVAnd(E, computeBugFreeDelta(Assertions));
-        Optional<bool> res = querySMTExpr(Solver, Q);
+        Optional<bool> sat = queryBV(Solver, Q);
 		// Keep this assertions.
-        if (!res.hasValue() || res.getValue())
+        if (!sat.hasValue() || sat.getValue())
 			I = Tmp;
 		else
 			--n;
@@ -172,7 +170,7 @@ Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E, SMTExprRef Delta
 	// 	*p++ = I;
 	// }
 	// *p = NULL;
-	return Optional<bool>(false);
+	return sat;
 }
 /*
 void BugFreePass::printMinimalAssertions() {

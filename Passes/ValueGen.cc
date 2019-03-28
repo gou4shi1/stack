@@ -293,7 +293,7 @@ private:
                 else	        // Wrap: [Lo, UMAX] union [0, Hi).
                     Cond = Solver->mkBVOr(Cmp0, Cmp1);
             }
-            Solver->addConstraint(Cond);
+            addBVConstraint(Solver, Cond);
         }
     }
 #undef Solver
