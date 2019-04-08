@@ -5,7 +5,7 @@
 #include <llvm/Analysis/ScalarEvolutionExpander.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Support/SMTAPI.h>
-// #include <llvm/Transforms/Utils/Local.h>
+#include <llvm/Transforms/Utils/Local.h>
 
 #define DEBUG_TYPE "bugfree-algebra-simply"
 
@@ -36,7 +36,7 @@ bool contains(const SCEV *L, const SCEV *R) {
 	}
 	return std::includes(LTerms.begin(), LTerms.end(), RTerms.begin(), RTerms.end());
 }
-/*
+
 const char *getPredicateStr(CmpInst::Predicate Pred) {
 	switch (Pred) {
 	default: assert(0);
@@ -52,7 +52,7 @@ const char *getPredicateStr(CmpInst::Predicate Pred) {
 	case CmpInst::ICMP_SLE: return " ≤s ";
 	}
 }
-
+/*
 inline const char *qstr(int isEqv) {
 	switch (isEqv) {
 	default: return "timeout";
@@ -67,12 +67,12 @@ bool BugFreeAlgebraSimplyPass::runOnFunction(Function &F, FunctionAnalysisManage
 	SE = &FAM.getResult<ScalarEvolutionAnalysis>(F);
 	TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
 	bool Changed = false;
-    for (auto &I: instructions(F)) {
-        // TODO:
-		// if (!Diagnostic::hasSingleDebugLocation(I))
-		// 	continue;
+	for (auto i = inst_begin(F), e = inst_end(F); i != e; ) {
+		Instruction *I = &*i++;
+		if (!Diagnostic::hasSingleDebugLocation(I))
+			continue;
 		// For now we are only interested in comparisons.
-		if (ICmpInst *ICI = dyn_cast<ICmpInst>(&I))
+		if (ICmpInst *ICI = dyn_cast<ICmpInst>(I))
 			Changed |= visitICmpInst(ICI);
     }
 	return Changed;
@@ -92,29 +92,22 @@ bool BugFreeAlgebraSimplyPass::visitICmpInst(ICmpInst *I) {
 	// Transform (lhs op rhs) to ((lhs - rhs) op 0).
 	ICmpInst *NewCmp = new ICmpInst(I, I->getSignedPredicate(), V, Z);
 	NewCmp->setDebugLoc(I->getDebugLoc());
-    // TODO: use HTML as Diagnostic
-    printf("%d\n", checkEqv(I, NewCmp));
-    return false;
-    // TODO: timeout
-	// int isEqv = 0;
-	// if (SMTFork() == 0)
-	// 	isEqv = checkEqv(I, NewCmp);
-	// SMTJoin(&isEqv);
-	// BENCHMARK(Diagnostic() << "query: " << qstr(isEqv) << "\n");
-	// if (isEqv <= 0) {
-	// 	RecursivelyDeleteTriviallyDeadInstructions(NewCmp, TLI);
-	// 	return false;
-	// }
-	// Diag.bug(DEBUG_TYPE);
-	// Diag << "model: |\n" << *I << "\n  -->" << *NewCmp << "\n"
-	//      << "  ************************************************************\n  "
-	//      << *L << getPredicateStr(I->getPredicate()) << *R << "\n  -->  "
-	//      << *S << getPredicateStr(I->getSignedPredicate()) << "0\n";
-	// Diag.backtrace(I);
-	// printMinimalAssertions();
-	// I->replaceAllUsesWith(NewCmp);
-	// RecursivelyDeleteTriviallyDeadInstructions(I, TLI);
-	// return true;
+	int	isEqv = checkEqv(I, NewCmp);
+	//BENCHMARK(Diagnostic() << "query: " << qstr(isEqv) << "\n");
+	if (!isEqv) {
+		RecursivelyDeleteTriviallyDeadInstructions(NewCmp, TLI);
+		return false;
+	}
+	Diag.bug(DEBUG_TYPE);
+	Diag << "model: |\n" << *I << "\n  -->" << *NewCmp << "\n"
+	     << "  ************************************************************\n  "
+	     << *L << getPredicateStr(I->getPredicate()) << *R << "\n  -->  "
+	     << *S << getPredicateStr(I->getSignedPredicate()) << "0\n";
+	Diag.backtrace(I);
+	printMinimalAssertions();
+	I->replaceAllUsesWith(NewCmp);
+	RecursivelyDeleteTriviallyDeadInstructions(I, TLI);
+	return true;
 }
 
 bool BugFreeAlgebraSimplyPass::checkEqv(ICmpInst *I0, ICmpInst *I1) {

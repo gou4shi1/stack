@@ -1,15 +1,15 @@
 #pragma once
 
-// #include "Diagnostic.h"
 #include "ValueGen.h"
 #include "PathGen.h"
+#include "Diagnostic.h"
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Dominators.h>
 
-// TODO: Benchmark and Diagnostic
+// TODO: Benchmark
 // #define BENCHMARK(e) if (BenchmarkFlag) { e; }
 
 // extern bool BenchmarkFlag;
@@ -23,13 +23,16 @@ class BugFreePass {
     llvm::DenseMap<llvm::BasicBlock *, bool> isBlockInLoop;
 	llvm::SmallVector<BugOnInst *, 8> Assertions;
 	llvm::PostDominatorTree *PDT;
-	// void *Buffer;
+	void *Buffer;
     
     bool initialize(llvm::Function &, llvm::FunctionAnalysisManager &);
     void reset();
     void calculateBackedgesAndInLoopBlocks(llvm::Function &);
 
 public:
+    BugFreePass();
+    BugFreePass(const BugFreePass&);
+    ~BugFreePass();
     llvm::PreservedAnalyses run(llvm::Function &, llvm::FunctionAnalysisManager &);
 
 protected:
@@ -39,7 +42,7 @@ protected:
     llvm::SMTSolverRef Solver;
     ValueGenRef VG;
     PathGenRef PG;
-	// Diagnostic Diag;
+	Diagnostic Diag;
 
 	virtual bool runOnFunction(llvm::Function &, llvm::FunctionAnalysisManager &) = 0;
 
@@ -49,5 +52,5 @@ protected:
     llvm::SMTExprRef computeBugFreeDelta(llvm::SmallVectorImpl<BugOnInst *> &);
 	llvm::SMTExprRef getBugFreeDelta(llvm::BasicBlock *);
     llvm::Optional<bool> queryWithBugFreeDelta(llvm::SMTExprRef E, llvm::SMTExprRef Delta);
-	// void printMinimalAssertions();
+	void printMinimalAssertions();
 };

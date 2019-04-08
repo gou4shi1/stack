@@ -5,9 +5,7 @@
 #include <llvm/ADT/Optional.h>
 #include <llvm/Analysis/CFG.h>
 #include <llvm/Support/SMTAPI.h>
-// #include <sys/mman.h>
-// #include <cxxabi.h>
-// #include <stdlib.h>
+#include <sys/mman.h>
 
 using namespace llvm;
 
@@ -18,9 +16,9 @@ IgnorePostOpt("ignore-bugon-post",
 static cl::opt<bool>
 MinBugOnOpt("min-bugon",
             cl::desc("Compute minimal bugon set"), cl::init(true));
-/*
-static const size_t BUFFER_SIZE = 4096;
 
+static const size_t BUFFER_SIZE = 8192;
+/*
 bool BenchmarkFlag;
 
 namespace {
@@ -30,17 +28,22 @@ namespace {
 }
 
 static BenchmarkInit X;
+*/
+BugFreePass::BugFreePass() {
+    if (MinBugOnOpt)
+		Buffer = mmap(NULL, BUFFER_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+}
 
-BugFreePass::BugFreePass(char &ID) : FunctionPass(ID), Buffer(NULL) {
-	if (MinBugOnOpt)
+BugFreePass::BugFreePass(const BugFreePass &P) {
+    if (MinBugOnOpt)
 		Buffer = mmap(NULL, BUFFER_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 }
 
 BugFreePass::~BugFreePass() {
-	if (Buffer)
+    if (Buffer)
 		munmap(Buffer, BUFFER_SIZE);
 }
-
+/*
 static std::string demangle(Function &F) {
 	std::string Name = F.getName();
 	char *s = abi::__cxa_demangle(Name.c_str(), NULL, NULL, NULL);
@@ -142,10 +145,8 @@ SMTExprRef BugFreePass::getBugFreeDelta(BasicBlock *BB) {
 Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E, SMTExprRef Delta) {
     SMTExprRef Q = Solver->mkBVAnd(E, Delta);
     Optional<bool> sat = queryBV(Solver, Q);
-    if (!sat.hasValue() || sat.getValue())
+    if (!Buffer || !sat.hasValue() || sat.getValue())
         return sat;
-    // if (!Buffer || Status != SMT_UNSAT)
-    // 	return Status;
 	unsigned n = Assertions.size();
 	// Compute the minimal bugon set.
 	for (BugOnInst *&I: Assertions) {
@@ -163,16 +164,16 @@ Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E, SMTExprRef Delta
 			--n;
 	}
 	// Output the unsat core.
-	// BugOnInst **p = (BugOnInst **)Buffer;
-	// for (BugOnInst *I : Assertions) {
-	// 	if (!I)
-	// 		continue;
-	// 	*p++ = I;
-	// }
-	// *p = NULL;
+	BugOnInst **p = (BugOnInst **)Buffer;
+	for (BugOnInst *I : Assertions) {
+		if (!I)
+			continue;
+        *p++ = I;
+	}
+	*p = nullptr;
 	return sat;
 }
-/*
+
 void BugFreePass::printMinimalAssertions() {
 	if (!Buffer)
 		return;
@@ -181,12 +182,9 @@ void BugFreePass::printMinimalAssertions() {
 		Count++;
 	Diag << "ncore: " << Count << "\n";
 	Diag << "core: \n";
-	LLVMContext &C = BugOn->getContext();
 	for (BugOnInst **p = (BugOnInst **)Buffer; *p; ++p) {
 		BugOnInst *I = *p;
-		MDNode *MD = I->getDebugLoc().getAsMDNode(C);
-		Diag.location(MD);
+		Diag.location(I->getDebugLoc());
 		Diag << "    - " << I->getAnnotation() << "\n";
 	}
 }
-*/

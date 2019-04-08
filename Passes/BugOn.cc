@@ -1,5 +1,5 @@
 #include "BugOn.h"
-//#include "Diagnostic.h"
+#include "Diagnostic.h"
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/Analysis/Loads.h>
 #include <llvm/IR/InstIterator.h>
@@ -7,10 +7,10 @@
 using namespace llvm;
 
 #define OPT_BUGON "opt.bugon"
-
+/*
 static cl::opt<bool>
 ShowTrueOpt("show-bugon-true", cl::desc("Show always true bug conditions"));
-
+*/
 Function *getBugOn(const Module *M) {
 	return M->getFunction(OPT_BUGON);
 }
@@ -104,10 +104,10 @@ bool BugOnPass::insert(Value *V, StringRef Bug, const DebugLoc &DbgLoc) {
 			return false;
         /*
 		if (ShowTrueOpt) {
-			Instruction *I = Builder->GetInsertPoint();
+			Instruction *I = &*Builder->GetInsertPoint();
 			if (Diagnostic::hasSingleDebugLocation(I)) {
 				Diagnostic Diag;
-				Diag.bug(Pass::lookupPassInfo(getPassID())->getPassArgument());
+				//Diag.bug(getPassName());
 				Diag << "model: |\n" << *I << "\n";
 				Diag.backtrace(I);
 			}
