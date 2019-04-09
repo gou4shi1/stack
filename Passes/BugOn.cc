@@ -89,7 +89,7 @@ Value *BugOnPass::getAddressOperand(Value *I, bool skipVolatile) {
 			return AI->getPointerOperand();
 	}
 #undef IS_VOLATILE
-	return NULL;
+	return nullptr;
 }
 
 bool BugOnPass::insert(Value *V, StringRef Bug) {

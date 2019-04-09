@@ -43,7 +43,7 @@ public:
     llvm::Value *getNonvolatileBaseAddress(llvm::Value *V) {
 		if (llvm::Value *P = getNonvolatileAddressOperand(V))
 			return getUnderlyingObject(P);
-		return NULL;
+		return nullptr;
 	}
 
 protected:
