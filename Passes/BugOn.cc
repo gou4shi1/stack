@@ -7,10 +7,10 @@
 using namespace llvm;
 
 #define OPT_BUGON "opt.bugon"
-/*
+
 static cl::opt<bool>
 ShowTrueOpt("show-bugon-true", cl::desc("Show always true bug conditions"));
-*/
+
 Function *getBugOn(const Module *M) {
 	return M->getFunction(OPT_BUGON);
 }
@@ -102,17 +102,16 @@ bool BugOnPass::insert(Value *V, StringRef Bug, const DebugLoc &DbgLoc) {
 	if (ConstantInt *CI = dyn_cast<ConstantInt>(V)) {
 		if (CI->isZero())
 			return false;
-        /*
 		if (ShowTrueOpt) {
 			Instruction *I = &*Builder->GetInsertPoint();
 			if (Diagnostic::hasSingleDebugLocation(I)) {
 				Diagnostic Diag;
-				//Diag.bug(getPassName());
+                // TODO: get pass name from derived class
+                Diag.bug("bugon(true)");
 				Diag << "model: |\n" << *I << "\n";
 				Diag.backtrace(I);
 			}
 		}
-        */
 	}
 	LLVMContext &C = V->getContext();
 	if (!BugOn) {
