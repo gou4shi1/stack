@@ -1,5 +1,6 @@
 #include "BugOn.h"
 #include "Diagnostic.h"
+#include "DebugLocHelper.h"
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/Analysis/Loads.h>
 #include <llvm/IR/InstIterator.h>
@@ -49,26 +50,6 @@ bool BugOnPass::runOnInstructionsOfFunction(Function &F) {
 	return Changed;
 }
 
-bool BugOnPass::clearDebugLoc(Value *V) {
-	Instruction *I = dyn_cast<Instruction>(V);
-	if (!I || !I->getDebugLoc())
-		return false;
-	I->setDebugLoc(DebugLoc());
-	return true;
-}
-
-bool BugOnPass::recursivelyClearDebugLoc(Value *V) {
-	Instruction *I = dyn_cast<Instruction>(V);
-	if (!I || !I->getDebugLoc())
-		return false;
-	I->setDebugLoc(DebugLoc());
-    for (auto &U: I->operands()) {
-		if (U->hasOneUse())
-			recursivelyClearDebugLoc(U);
-    }
-	return true;
-}
-
 Value *BugOnPass::getUnderlyingObject(Value *V) {
 	return GetUnderlyingObject(V, *DL, 1000);
 }
@@ -104,7 +85,7 @@ bool BugOnPass::insert(Value *V, StringRef Bug, const DebugLoc &DbgLoc) {
 			return false;
 		if (ShowTrueOpt) {
 			Instruction *I = &*Builder->GetInsertPoint();
-			if (Diagnostic::hasSingleDebugLocation(I)) {
+			if (hasSingleDebugLocation(I)) {
 				Diagnostic Diag;
                 // TODO: get pass name from derived class
                 Diag.bug("bugon(true)");

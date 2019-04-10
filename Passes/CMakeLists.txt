@@ -1,4 +1,5 @@
 add_llvm_library(libStackPasses MODULE
+    DebugLocHelper.cc
     Diagnostic.cc
     LoadElim.cc
     BugOn.cc

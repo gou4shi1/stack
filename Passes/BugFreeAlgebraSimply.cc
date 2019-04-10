@@ -1,5 +1,6 @@
 #include "BugFreeAlgebraSimply.h"
 #include "SMTHelper.h"
+#include "DebugLocHelper.h"
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Analysis/ScalarEvolutionExpander.h>
@@ -69,7 +70,7 @@ bool BugFreeAlgebraSimplyPass::runOnFunction(Function &F, FunctionAnalysisManage
 	bool Changed = false;
 	for (auto i = inst_begin(F), e = inst_end(F); i != e; ) {
 		Instruction *I = &*i++;
-		if (!Diagnostic::hasSingleDebugLocation(I))
+		if (!hasSingleDebugLocation(I))
 			continue;
 		// For now we are only interested in comparisons.
 		if (ICmpInst *ICI = dyn_cast<ICmpInst>(I))

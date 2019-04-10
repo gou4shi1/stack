@@ -12,9 +12,6 @@ namespace llvm {
 
 class Diagnostic {
 public:
-	// Return if I has a non-inlined debug location.
-	static bool hasSingleDebugLocation(llvm::Instruction *I);
-
 	Diagnostic();
 
 	llvm::raw_ostream &os() { return OS; }

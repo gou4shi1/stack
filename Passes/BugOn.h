@@ -37,9 +37,6 @@ class BugOnPass {
 public:
     virtual llvm::PreservedAnalyses run(llvm::Function &, llvm::FunctionAnalysisManager &);
 
-	static bool clearDebugLoc(llvm::Value *);
-	static bool recursivelyClearDebugLoc(llvm::Value *);
-
     llvm::Value *getNonvolatileBaseAddress(llvm::Value *V) {
 		if (llvm::Value *P = getNonvolatileAddressOperand(V))
 			return getUnderlyingObject(P);

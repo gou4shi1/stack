@@ -8,20 +8,6 @@
 
 using namespace llvm;
 
-bool Diagnostic::hasSingleDebugLocation(Instruction *I) {
-	const DebugLoc &DbgLoc = I->getDebugLoc();
-	// Skip inserted instructions without debugging information.
-	if (!DbgLoc)
-		return false;
-	// Skip inlined instructions.
-	if (DbgLoc.getInlinedAt())
-		return false;
-	// Macro-expanded code.
-	if (I->getMetadata("macro"))
-		return false;
-	return true;
-}
-
 Diagnostic::Diagnostic() : OS(errs()) {}
 
 void Diagnostic::backtrace(Instruction *I) {
