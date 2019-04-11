@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+DIR=$(dirname "${BASH_SOURCE[0]}")
+OPT="$(llvm-config --bindir)/opt"
+exec ${OPT} -load-pass-plugin=${DIR}/../Passes/libStackPasses.so \
+    -aa-pipeline="default" \
+    -passes="module(globalopt,deadargelim,strip-dead-prototypes,always-inline,cgscc(function-attrs,argpromotion,function(sccp,elim,adce,bugon,bugfree)))" \
+    -disable-output \
+	"$@" 2>&1
+
+# TODO:
+# new-pm miss prune-eh
+# miss inline-only, use always-inline instead
+# parse flags with PassPlugin: -ignore-bugon-post -show-bugon-true

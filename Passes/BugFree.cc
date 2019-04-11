@@ -11,7 +11,7 @@ using namespace llvm;
 
 static cl::opt<bool>
 IgnorePostOpt("ignore-bugon-post",
-              cl::desc("Ignore bugon conditions on post-dominators"));
+              cl::desc("Ignore bugon conditions on post-dominators"), cl::init(true));
 
 static cl::opt<bool>
 MinBugOnOpt("min-bugon",

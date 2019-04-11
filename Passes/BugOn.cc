@@ -10,7 +10,7 @@ using namespace llvm;
 #define OPT_BUGON "opt.bugon"
 
 static cl::opt<bool>
-ShowTrueOpt("show-bugon-true", cl::desc("Show always true bug conditions"));
+ShowTrueOpt("show-bugon-true", cl::desc("Show always true bug conditions"), cl::init(true));
 
 Function *getBugOn(const Module *M) {
 	return M->getFunction(OPT_BUGON);

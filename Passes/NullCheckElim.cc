@@ -23,6 +23,7 @@ PreservedAnalyses NullCheckElimPass::run(Function &F, FunctionAnalysisManager &F
     DomTreeUpdater DTU(*DT, DomTreeUpdater::UpdateStrategy::Eager);
     auto MSSAU = MemorySSAUpdater(MSSA);
 	bool Changed = false;
+    // TODO: split SimplifyCFG related into another file
 	Changed |= removeUnreachableBB(F);
 	for (Function::iterator i = F.begin(), e = F.end(); i != e; ) {
 	    BasicBlock *BB = &*i++;
