@@ -14,7 +14,7 @@ namespace llvm {
 
 class NullCheckElimPass {
 	llvm::MemorySSA *MSSA;
-	llvm::MemoryDependenceResults *MDR;
+	llvm::MemoryDependenceResults *MemDep;
 	llvm::TargetLibraryInfo *TLI;
     llvm::LoopInfo *LI;
 	llvm::DominatorTree *DT;

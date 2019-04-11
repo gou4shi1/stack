@@ -10,9 +10,9 @@
 
 using namespace llvm;
 
-llvm::PreservedAnalyses LoadElimPass::run(llvm::Function &F, llvm::FunctionAnalysisManager &FAM) {
+PreservedAnalyses LoadElimPass::run(Function &F, FunctionAnalysisManager &FAM) {
 	AA = &FAM.getResult<AAManager>(F);
-	MDR = &FAM.getResult<MemoryDependenceAnalysis>(F);
+	MemDep = &FAM.getResult<MemoryDependenceAnalysis>(F);
 	TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
 	bool Changed = false;
 	for (auto i = inst_begin(F), e = inst_end(F); i != e; ) {
@@ -26,7 +26,7 @@ llvm::PreservedAnalyses LoadElimPass::run(llvm::Function &F, llvm::FunctionAnaly
 bool LoadElimPass::merge(LoadInst *I) {
 	if (I->isVolatile())
 		return false;
-	Instruction *Dep = MDR->getDependency(I).getInst();
+	Instruction *Dep = MemDep->getDependency(I).getInst();
 	if (!Dep)
 		return false;
 	Value *P = NULL, *V = NULL;

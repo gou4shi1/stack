@@ -18,7 +18,7 @@ PreservedAnalyses NullCheckElimPass::run(Function &F, FunctionAnalysisManager &F
 	DT = &FAM.getResult<DominatorTreeAnalysis>(F);
     LI = &FAM.getResult<LoopAnalysis>(F);
 	MSSA = &FAM.getResult<MemorySSAAnalysis>(F).getMSSA();
-	MDR = &FAM.getResult<MemoryDependenceAnalysis>(F);
+	MemDep = &FAM.getResult<MemoryDependenceAnalysis>(F);
 	TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
     DomTreeUpdater DTU(*DT, DomTreeUpdater::UpdateStrategy::Eager);
     auto MSSAU = MemorySSAUpdater(MSSA);
@@ -30,7 +30,7 @@ PreservedAnalyses NullCheckElimPass::run(Function &F, FunctionAnalysisManager &F
 	    Changed |= ConstantFoldTerminator(BB, true);
 	    Changed |= EliminateDuplicatePHINodes(BB);
 	    // Must be the last one.
-	    Changed |= MergeBlockIntoPredecessor(BB, &DTU, LI, &MSSAU, MDR);
+	    Changed |= MergeBlockIntoPredecessor(BB, &DTU, LI, &MSSAU, MemDep);
 	}
 	return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
 }
@@ -69,6 +69,5 @@ bool NullCheckElimPass::DeleteNullCheckBB(BasicBlock *BB) {
 	if (!BI || !BI->isConditional())
 		return false;
 	// Remove debugging information to ignore the check.
-    BI->dump();
 	return clearDebugLoc(BI->getCondition());
 }

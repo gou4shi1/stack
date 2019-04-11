@@ -12,7 +12,7 @@ namespace llvm {
 
 class LoadElimPass {
 	llvm::AliasAnalysis *AA;
-	llvm::MemoryDependenceResults *MDR;
+	llvm::MemoryDependenceResults *MemDep;
 	llvm::TargetLibraryInfo *TLI;
 
 	bool merge(llvm::LoadInst *);
