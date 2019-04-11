@@ -42,10 +42,11 @@ bool BugOnPass::runOnInstructionsOfFunction(Function &F) {
 	DL = &F.getParent()->getDataLayout();
 
 	bool Changed = false;
-    for (auto &I: instructions(F)) {
-		if (!I.getDebugLoc()) continue;
-		setInsertPoint(&I);
-		Changed |= runOnInstruction(&I);
+	for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ) {
+		Instruction *I = &*i++;
+		if (!I->getDebugLoc()) continue;
+		setInsertPoint(I);
+		Changed |= runOnInstruction(I);
     }
 	return Changed;
 }
