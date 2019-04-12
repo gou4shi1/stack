@@ -12,7 +12,7 @@ DIR=$(dirname "${BASH_SOURCE[0]}")
 NCPU=$(${DIR}/ncpu)
 OUT='pstack.txt'
 
-find . -name '*.ll' -type f -print0 | xargs -0 -P ${NCPU} -n 1 ${XARGSVERBOSE} bash -c "${XARGSECHO} ${DIR}/optck \"\$0\" > \"\$0.out\""
+find . -name '*.ll' -type f -print0 | xargs -0 -P ${NCPU} -n 1 ${XARGSVERBOSE} bash -c "${XARGSECHO} ${DIR}/stack \"\$0\" > \"\$0.out\""
 rm -f ${OUT}
 find . -name '*.ll.out' -type f -print0 | xargs -0 -n 1 bash -c "cat \"\$0\" >> ${OUT}"
 
