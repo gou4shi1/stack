@@ -14,7 +14,3 @@ add_llvm_library(libStackPasses MODULE
     BugFreeAlgebraSimply.cc
     Passes.cc
     )
-
-set_target_properties(libStackPasses PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ..
-)

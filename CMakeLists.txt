@@ -18,6 +18,12 @@ include(AddLLVM)
 add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(test)
+
+# TODO:
+# make check-all
+# make install
