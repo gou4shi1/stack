@@ -1,0 +1,7 @@
+configure_file(gcc gcc COPYONLY)
+configure_file(gcc g++ COPYONLY)
+configure_file(gcc cc COPYONLY)
+configure_file(gcc c++ COPYONLY)
+configure_file(gcc clang COPYONLY)
+configure_file(gcc clang++ COPYONLY)
+configure_file(cc1 cc1 COPYONLY)

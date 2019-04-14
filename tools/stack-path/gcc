@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# ignore cmake
+if [ "$STACK_BUILD_CMAKING" != "yes" ]; then
+    DIR=$(dirname "${BASH_SOURCE[0]}")
+    "$DIR/cc1" "$@" > /dev/null
+fi
+
+EXE=$(basename "${BASH_SOURCE[0]}")
+export PATH=$(echo $PATH | sed -e "s/[^:]*://")
+"$EXE" "$@"

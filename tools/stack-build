@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+DIR=$(dirname "${BASH_SOURCE[0]}")
+STACK_PATH=$(cd "${DIR}/stack-path"; pwd)
+export PATH="${STACK_PATH}:${PATH}"
+export CC="${STACK_PATH}/cc"
+export CXX="${STACK_PATH}/c++"
+
+if [ "$1" = "cmake" ]; then
+    # used in stack-path/gcc
+    export STACK_BUILD_CMAKING="yes"
+fi
+
+"$@"
