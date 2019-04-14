@@ -6,13 +6,13 @@ using namespace llvm;
 
 bool BugOnNullPass::runOnInstruction(Instruction *I) {
     if (I->isTerminator()) {
-		Visited.clear();
-		return false;
+        Visited.clear();
+        return false;
     }
-	Value *Base = getNonvolatileBaseAddress(I);
-	if (!Base)
+    Value *Base = getNonvolatileBaseAddress(I);
+    if (!Base)
         return false;
-	if (!Visited.insert(Base).second)
+    if (!Visited.insert(Base).second)
         return false;
-	return insert(createIsNull(Base), "null pointer dereference");
+    return insert(createIsNull(Base), "null pointer dereference");
 }
