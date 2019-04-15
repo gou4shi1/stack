@@ -4,7 +4,6 @@ add_llvm_library(libStackPasses MODULE
     InlineOnly.cc
     NullCheckElim.cc
     LoadElim.cc
-    ElimAssert.cc
     BugOn.cc
     BugOnInt.cc
     BugOnNull.cc
