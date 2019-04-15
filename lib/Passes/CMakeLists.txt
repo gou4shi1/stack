@@ -3,6 +3,7 @@ add_llvm_library(libStackPasses MODULE
     Diagnostic.cc
     InlineOnly.cc
     NullCheckElim.cc
+    CFGElim.cc
     LoadElim.cc
     BugOn.cc
     BugOnInt.cc

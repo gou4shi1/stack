@@ -2,6 +2,7 @@
 #include "BugOnInt.h"
 #include "BugOnNull.h"
 #include "BugOnUndef.h"
+#include "CFGElim.h"
 #include "InlineOnly.h"
 #include "LoadElim.h"
 #include "NullCheckElim.h"
@@ -23,6 +24,7 @@ llvmGetPassPluginInfo() {
         PB.registerPipelineParsingCallback([](StringRef PassName, FunctionPassManager &FPM, ArrayRef<PassBuilder::PipelineElement>) {
             if (PassName == "elim") {
                 FPM.addPass(NullCheckElimPass());
+                FPM.addPass(CFGElimPass());
                 FPM.addPass(LoadElimPass());
                 return true;
             }
