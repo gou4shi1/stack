@@ -5,6 +5,7 @@
 #include "InlineOnly.h"
 #include "LoadElim.h"
 #include "NullCheckElim.h"
+#include "ElimAssert.h"
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 
@@ -24,6 +25,7 @@ llvmGetPassPluginInfo() {
             if (PassName == "elim") {
                 FPM.addPass(NullCheckElimPass());
                 FPM.addPass(LoadElimPass());
+                FPM.addPass(ElimAssertPass());
                 return true;
             }
             if (PassName == "bugon") {
