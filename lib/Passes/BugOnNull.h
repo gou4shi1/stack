@@ -11,5 +11,5 @@ class BugOnNullPass : public BugOnPass {
 	bool runOnInstruction(llvm::Instruction *) override;
 
 public:
-    static llvm::StringRef name() { return "bugon-null"; }
+    static llvm::StringRef name() { return "BugOnNullPass"; }
 };

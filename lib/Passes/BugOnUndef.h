@@ -6,5 +6,5 @@ class BugOnUndefPass : public BugOnPass {
 	bool runOnInstruction(llvm::Instruction *) override;
 
 public:
-    static llvm::StringRef name() { return "bugon-undef"; }
+    static llvm::StringRef name() { return "BugOnUndefPass"; }
 };

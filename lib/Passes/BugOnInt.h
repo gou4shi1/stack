@@ -7,5 +7,5 @@ class BugOnIntPass : public BugOnPass {
 	bool visitShiftOperator(llvm::IntegerType *, llvm::Value *R, const char *Bug);
 
 public:
-    static llvm::StringRef name() { return "bugon-int"; }
+    static llvm::StringRef name() { return "BugOnIntPass"; }
 };
