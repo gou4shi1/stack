@@ -3,9 +3,10 @@
 #include "BugOn.h"
 
 class BugOnIntPass : public BugOnPass {
-	bool runOnInstruction(llvm::Instruction *) override;
-	bool visitShiftOperator(llvm::IntegerType *, llvm::Value *R, const char *Bug);
+    bool runOnInstruction(llvm::Instruction *) override;
+    bool visitShiftOperator(llvm::IntegerType *, llvm::Value *R,
+                            const char *Bug);
 
-public:
+  public:
     static llvm::StringRef name() { return "BugOnIntPass"; }
 };

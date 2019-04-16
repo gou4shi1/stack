@@ -1,9 +1,11 @@
 #pragma once
 
 namespace llvm {
-    class Value;
-    class Instruction;
-}
+
+class Value;
+class Instruction;
+
+} // namespace llvm
 
 bool clearDebugLoc(llvm::Value *);
 bool recursivelyClearDebugLoc(llvm::Value *);

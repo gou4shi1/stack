@@ -3,8 +3,8 @@
 #include "BugOn.h"
 
 class BugOnUndefPass : public BugOnPass {
-	bool runOnInstruction(llvm::Instruction *) override;
+    bool runOnInstruction(llvm::Instruction *) override;
 
-public:
+  public:
     static llvm::StringRef name() { return "BugOnUndefPass"; }
 };

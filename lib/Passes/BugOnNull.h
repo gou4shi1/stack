@@ -6,10 +6,10 @@
 class BugOnNullPass : public BugOnPass {
     using SmallPtrSet = llvm::SmallPtrSet<llvm::Value *, 32>;
 
-	SmallPtrSet Visited;
+    SmallPtrSet Visited;
 
-	bool runOnInstruction(llvm::Instruction *) override;
+    bool runOnInstruction(llvm::Instruction *) override;
 
-public:
+  public:
     static llvm::StringRef name() { return "BugOnNullPass"; }
 };
