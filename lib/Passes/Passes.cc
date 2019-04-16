@@ -1,6 +1,7 @@
 #include "BugFreeAlgebraSimplify.h"
 #include "BugFreeConstantFold.h"
 #include "BugFreeDCE.h"
+#include "BugOnBounds.h"
 #include "BugOnInt.h"
 #include "BugOnNull.h"
 #include "BugOnUndef.h"
@@ -33,6 +34,7 @@ llvmGetPassPluginInfo() {
             if (PassName == "bugon") {
                 FPM.addPass(BugOnIntPass());
                 FPM.addPass(BugOnNullPass());
+                FPM.addPass(BugOnBoundsPass());
                 //FPM.addPass(BugOnUndefPass());
                 return true;
             }

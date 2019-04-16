@@ -31,14 +31,14 @@ class BugOnPass {
 
     llvm::Value *getUnderlyingObject(llvm::Value *);
     llvm::Value *getAddressOperand(llvm::Value *, bool skipVolatile = false);
-    llvm::Value *getNonvolatileAddressOperand(llvm::Value *V) {
-        return getAddressOperand(V, true);
-    }
 
   public:
     virtual llvm::PreservedAnalyses run(llvm::Function &,
                                         llvm::FunctionAnalysisManager &);
 
+    llvm::Value *getNonvolatileAddressOperand(llvm::Value *V) {
+        return getAddressOperand(V, true);
+    }
     llvm::Value *getNonvolatileBaseAddress(llvm::Value *V) {
         if (llvm::Value *P = getNonvolatileAddressOperand(V))
             return getUnderlyingObject(P);
@@ -52,6 +52,7 @@ class BugOnPass {
     BuilderTy *Builder;
     const llvm::DataLayout *DL;
 
+    virtual void getAnalysis(llvm::Function &F, llvm::FunctionAnalysisManager &FAM) {};
     virtual bool runOnInstruction(llvm::Instruction *) = 0;
     bool runOnInstructionsOfFunction(llvm::Function &);
 

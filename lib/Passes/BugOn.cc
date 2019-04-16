@@ -32,6 +32,8 @@ StringRef BugOnInst::getAnnotation() const {
 }
 
 PreservedAnalyses BugOnPass::run(Function &F, FunctionAnalysisManager &FAM) {
+    DL = &F.getParent()->getDataLayout();
+    getAnalysis(F, FAM);
     bool Changed = runOnInstructionsOfFunction(F);
     if (!Changed)
         return PreservedAnalyses::all();
@@ -43,7 +45,6 @@ PreservedAnalyses BugOnPass::run(Function &F, FunctionAnalysisManager &FAM) {
 bool BugOnPass::runOnInstructionsOfFunction(Function &F) {
     BuilderTy TheBuilder(F.getContext());
     Builder = &TheBuilder;
-    DL = &F.getParent()->getDataLayout();
 
     bool Changed = false;
     for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e;) {
