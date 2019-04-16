@@ -9,6 +9,7 @@ add_llvm_library(libStackPasses MODULE
     BugOnInt.cc
     BugOnNull.cc
     BugOnBounds.cc
+    BugOnFree.cc
     BugOnUndef.cc
     SMTHelper.cc
     ValueGen.cc

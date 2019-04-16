@@ -2,6 +2,7 @@
 #include "BugFreeConstantFold.h"
 #include "BugFreeDCE.h"
 #include "BugOnBounds.h"
+#include "BugOnFree.h"
 #include "BugOnInt.h"
 #include "BugOnNull.h"
 #include "BugOnUndef.h"
@@ -35,6 +36,7 @@ llvmGetPassPluginInfo() {
                 FPM.addPass(BugOnIntPass());
                 FPM.addPass(BugOnNullPass());
                 FPM.addPass(BugOnBoundsPass());
+                FPM.addPass(BugOnFreePass());
                 //FPM.addPass(BugOnUndefPass());
                 return true;
             }
