@@ -52,7 +52,7 @@ class BugOnPass {
     BuilderTy *Builder;
     const llvm::DataLayout *DL;
 
-    virtual void getAnalysis(llvm::Function &F, llvm::FunctionAnalysisManager &FAM) {};
+    virtual void initialize(llvm::Function &F, llvm::FunctionAnalysisManager &FAM) {};
     virtual bool runOnInstruction(llvm::Instruction *) = 0;
     bool runOnInstructionsOfFunction(llvm::Function &);
 

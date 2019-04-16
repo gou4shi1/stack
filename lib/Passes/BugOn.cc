@@ -33,7 +33,7 @@ StringRef BugOnInst::getAnnotation() const {
 
 PreservedAnalyses BugOnPass::run(Function &F, FunctionAnalysisManager &FAM) {
     DL = &F.getParent()->getDataLayout();
-    getAnalysis(F, FAM);
+    initialize(F, FAM);
     bool Changed = runOnInstructionsOfFunction(F);
     if (!Changed)
         return PreservedAnalyses::all();

@@ -3,7 +3,7 @@
 
 using namespace llvm;
 
-void BugOnBoundsPass::getAnalysis(Function &F, FunctionAnalysisManager &FAM) {
+void BugOnBoundsPass::initialize(Function &F, FunctionAnalysisManager &FAM) {
     TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
     ObjSizeEval =
         llvm::make_unique<ObjectSizeOffsetEvaluator>(*DL, TLI, F.getContext());

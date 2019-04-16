@@ -13,7 +13,7 @@ class BugOnBoundsPass : public BugOnPass {
     llvm::TargetLibraryInfo *TLI;
     std::unique_ptr<llvm::ObjectSizeOffsetEvaluator> ObjSizeEval;
 
-    void getAnalysis(llvm::Function &,
+    void initialize(llvm::Function &,
                      llvm::FunctionAnalysisManager &) override;
     bool runOnInstruction(llvm::Instruction *) override;
 
