@@ -97,7 +97,7 @@ SMTExprRef PathGen::getTermGuard(BranchInst *I, BasicBlock *BB) {
     // false branch.
     if (I->getSuccessor(0) != BB) {
         assert(I->getSuccessor(1) == BB);
-        SMTExprRef E = Solver->mkBVNot(E);
+        E = Solver->mkBVNot(E);
     }
     return E;
 }
