@@ -22,7 +22,6 @@ class BugFreePass {
     llvm::Function *BugOn;
     llvm::DenseMap<llvm::BasicBlock *, bool> isBlockInLoop;
     llvm::SmallVector<BugOnInst *, 8> Assertions;
-    llvm::PostDominatorTree *PDT;
     void *Buffer;
 
     bool initialize(llvm::Function &, llvm::FunctionAnalysisManager &);
@@ -39,6 +38,7 @@ class BugFreePass {
   protected:
     const llvm::DataLayout *DL;
     llvm::DominatorTree *DT;
+    llvm::PostDominatorTree *PDT;
     llvm::SmallVector<PathGen::Edge, 32> Backedges;
     llvm::SMTSolverRef Solver;
     ValueGenRef VG;

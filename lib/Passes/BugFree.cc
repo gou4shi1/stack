@@ -59,13 +59,13 @@ static std::string demangle(Function &F) {
 */
 void BugFreePass::calculateBackedgesAndInLoopBlocks(Function &F) {
     Backedges.clear();
-    isBlockInLoop.clear();
     FindFunctionBackedges(F, Backedges);
     if (Backedges.empty())
         return;
     // No need to calculate InLoopBlocks if post-dominators are ignored.
     if (IgnorePostOpt)
         return;
+    isBlockInLoop.clear();
     for (auto i = scc_begin(&F), e = scc_end(&F); i != e; ++i) {
         if (i.hasLoop()) {
             for (const auto &j : *i)
@@ -98,8 +98,6 @@ PreservedAnalyses BugFreePass::run(Function &F, FunctionAnalysisManager &FAM) {
 }
 
 void BugFreePass::recalculate(Function &F) {
-    DT->recalculate(F);
-    PDT->recalculate(F);
     calculateBackedgesAndInLoopBlocks(F);
 }
 
@@ -122,20 +120,19 @@ SMTExprRef BugFreePass::getBugFreeDelta(BasicBlock *BB) {
     // or BB is in a loop.
     bool IgnorePostdom = IgnorePostOpt || isBlockInLoop.count(BB);
     Function *F = BB->getParent();
-    for (auto i = F->begin(), e = F->end(); i != e; ++i) {
-        BasicBlock *Blk = dyn_cast<BasicBlock>(i);
+    for (auto &Blk : *F) {
         // Collect blocks that (post)dominate BB: if BB is reachable,
         // these blocks must also be reachable, and we need to check
         // their bug assertions.
-        if (!DT->dominates(Blk, BB)) {
+        if (!DT->dominates(&Blk, BB)) {
             // Skip inspecting postdominators if BB is in a loop.
             if (IgnorePostdom)
                 continue;
-            if (!PDT->dominates(Blk, BB))
+            if (!PDT->dominates(&Blk, BB))
                 continue;
         }
-        for (auto i = Blk->begin(), e = Blk->end(); i != e; ++i) {
-            if (BugOnInst *BOI = dyn_cast<BugOnInst>(i))
+        for (auto &I : Blk) {
+            if (BugOnInst *BOI = dyn_cast<BugOnInst>(&I))
                 Assertions.push_back(BOI);
         }
     }
@@ -158,7 +155,7 @@ Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E,
         BugOnInst *Tmp = I;
         // Mask out this bugon and see if still unsat.
         I = nullptr;
-        SMTExprRef Q = Solver->mkBVAnd(E, computeBugFreeDelta(Assertions));
+        Q = Solver->mkBVAnd(E, computeBugFreeDelta(Assertions));
         Optional<bool> sat = queryBV(Solver, Q);
         // Keep this assertions.
         if (!sat.hasValue() || sat.getValue())
@@ -168,7 +165,7 @@ Optional<bool> BugFreePass::queryWithBugFreeDelta(SMTExprRef E,
     }
     // Output the unsat core.
     BugOnInst **p = (BugOnInst **)Buffer;
-    for (BugOnInst *I : Assertions) {
+    for (auto &I : Assertions) {
         if (!I)
             continue;
         *p++ = I;
