@@ -32,8 +32,12 @@ StringRef BugOnInst::getAnnotation() const {
 }
 
 PreservedAnalyses BugOnPass::run(Function &F, FunctionAnalysisManager &FAM) {
-    bool changed = runOnInstructionsOfFunction(F);
-    return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
+    bool Changed = runOnInstructionsOfFunction(F);
+    if (!Changed)
+        return PreservedAnalyses::all();
+    PreservedAnalyses PA;
+    PA.preserveSet<CFGAnalyses>();
+    return PA;
 }
 
 bool BugOnPass::runOnInstructionsOfFunction(Function &F) {

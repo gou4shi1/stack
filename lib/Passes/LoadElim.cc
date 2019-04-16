@@ -19,7 +19,11 @@ PreservedAnalyses LoadElimPass::run(Function &F, FunctionAnalysisManager &FAM) {
         if (LoadInst *LI = dyn_cast<LoadInst>(&*i++))
             Changed |= merge(LI);
     }
-    return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
+    if (!Changed)
+        return PreservedAnalyses::all();
+    PreservedAnalyses PA;
+    PA.preserveSet<CFGAnalyses>();
+    return PA;
 }
 
 // For now just merge loads in the same block.
