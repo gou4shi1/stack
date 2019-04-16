@@ -76,7 +76,7 @@ inline const char *qstr(int isEqv) {
 */
 } // anonymous namespace
 
-bool BugFreeAlgebraSimplyPass::runOnFunction(Function &F,
+PreservedAnalyses BugFreeAlgebraSimplyPass::runOnFunction(Function &F,
                                              FunctionAnalysisManager &FAM) {
     SE = &FAM.getResult<ScalarEvolutionAnalysis>(F);
     TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
@@ -89,7 +89,13 @@ bool BugFreeAlgebraSimplyPass::runOnFunction(Function &F,
         if (ICmpInst *ICI = dyn_cast<ICmpInst>(I))
             Changed |= visitICmpInst(ICI);
     }
-    return Changed;
+    if (!Changed)
+        return PreservedAnalyses::all();
+    PreservedAnalyses PA;
+    // TODO: preserve more analyses
+    PA.preserve<DominatorTreeAnalysis>();
+    PA.preserve<PostDominatorTreeAnalysis>();
+    return PA;
 }
 
 bool BugFreeAlgebraSimplyPass::visitICmpInst(ICmpInst *I) {

@@ -12,7 +12,7 @@ class BugFreeAlgebraSimplyPass : public BugFreePass {
     llvm::TargetLibraryInfo *TLI;
     llvm::ScalarEvolution *SE;
 
-	bool runOnFunction(llvm::Function &, llvm::FunctionAnalysisManager &) override;
+    llvm::PreservedAnalyses runOnFunction(llvm::Function &, llvm::FunctionAnalysisManager &) override;
 
 	bool visitICmpInst(llvm::ICmpInst *I);
 	bool checkEqv(llvm::ICmpInst *Old, llvm::ICmpInst *New);

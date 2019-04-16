@@ -94,9 +94,7 @@ bool BugFreePass::initialize(Function &F, FunctionAnalysisManager &FAM) {
 PreservedAnalyses BugFreePass::run(Function &F, FunctionAnalysisManager &FAM) {
     if (!initialize(F, FAM))
         return PreservedAnalyses::all();
-    bool Changed = runOnFunction(F, FAM);
-    // TODO: preserve more analyses
-    return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
+    return runOnFunction(F, FAM);
 }
 
 void BugFreePass::recalculate(Function &F) {
