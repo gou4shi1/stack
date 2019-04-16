@@ -9,12 +9,12 @@
 
 using namespace llvm;
 
-PreservedAnalyses CFGElimPass::run(Function &F,
-                                         FunctionAnalysisManager &FAM) {
-    DT = &FAM.getResult<DominatorTreeAnalysis>(F);
+PreservedAnalyses CFGElimPass::run(Function &F, FunctionAnalysisManager &FAM) {
+    DominatorTree &DT = FAM.getResult<DominatorTreeAnalysis>(F);
+    DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Lazy);
     bool Changed = false;
-    Changed |= removeUnreachableBB(F);
-    DomTreeUpdater DTU(*DT, DomTreeUpdater::UpdateStrategy::Lazy);
+    Changed |= removeUnreachableBlocks(F, nullptr, &DTU);
+    DTU.flush();
     for (auto i = F.begin(), e = F.end(); i != e;) {
         BasicBlock *BB = &*i++;
         Changed |= ConstantFoldTerminator(BB, true, nullptr, &DTU);
@@ -22,21 +22,10 @@ PreservedAnalyses CFGElimPass::run(Function &F,
         // Must be the last one.
         Changed |= MergeBlockIntoPredecessor(BB, &DTU);
     }
+    DTU.flush();
     if (!Changed)
         return PreservedAnalyses::all();
     PreservedAnalyses PA;
     PA.preserve<DominatorTreeAnalysis>();
     return PA;
-}
-
-bool CFGElimPass::removeUnreachableBB(Function &F) {
-    bool Changed = false;
-    DomTreeUpdater DTU(*DT, DomTreeUpdater::UpdateStrategy::Lazy);
-    for (auto &BB : F) {
-        if (DT->isReachableFromEntry(&BB))
-            continue;
-        DTU.deleteBB(&BB);
-        Changed = true;
-    }
-    return Changed;
 }
