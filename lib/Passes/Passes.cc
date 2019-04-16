@@ -33,7 +33,7 @@ llvmGetPassPluginInfo() {
             if (PassName == "bugon") {
                 FPM.addPass(BugOnIntPass());
                 FPM.addPass(BugOnNullPass());
-                FPM.addPass(BugOnUndefPass());
+                //FPM.addPass(BugOnUndefPass());
                 return true;
             }
             if (PassName == "bugfree") {
