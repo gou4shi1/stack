@@ -10,5 +10,4 @@ exec ${OPT} -load-pass-plugin=${DIR}/../lib/libStackPasses.so \
 
 # TODO:
 # timeout
-# new-pm miss prune-eh
 # parse flags with PassPlugin: -ignore-bugon-post -show-bugon-true
