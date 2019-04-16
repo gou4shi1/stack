@@ -1,4 +1,4 @@
-#include "BugFreeAlgebraSimply.h"
+#include "BugFreeAlgebraSimplify.h"
 #include "DebugLocHelper.h"
 #include "SMTHelper.h"
 #include <llvm/Analysis/AliasAnalysis.h>
@@ -8,7 +8,7 @@
 #include <llvm/Support/SMTAPI.h>
 #include <llvm/Transforms/Utils/Local.h>
 
-#define DEBUG_TYPE "bugfree-algebra-simply"
+#define DEBUG_TYPE "bugfree-algebra-simplify"
 
 using namespace llvm;
 
@@ -76,7 +76,7 @@ inline const char *qstr(int isEqv) {
 */
 } // anonymous namespace
 
-PreservedAnalyses BugFreeAlgebraSimplyPass::runOnFunction(Function &F,
+PreservedAnalyses BugFreeAlgebraSimplifyPass::runOnFunction(Function &F,
                                              FunctionAnalysisManager &FAM) {
     SE = &FAM.getResult<ScalarEvolutionAnalysis>(F);
     TLI = &FAM.getResult<TargetLibraryAnalysis>(F);
@@ -98,7 +98,7 @@ PreservedAnalyses BugFreeAlgebraSimplyPass::runOnFunction(Function &F,
     return PA;
 }
 
-bool BugFreeAlgebraSimplyPass::visitICmpInst(ICmpInst *I) {
+bool BugFreeAlgebraSimplifyPass::visitICmpInst(ICmpInst *I) {
     const SCEV *L = SE->getSCEV(I->getOperand(0));
     const SCEV *R = SE->getSCEV(I->getOperand(1));
     // Is L part of R (or vice versa)?
@@ -131,7 +131,7 @@ bool BugFreeAlgebraSimplyPass::visitICmpInst(ICmpInst *I) {
     return true;
 }
 
-bool BugFreeAlgebraSimplyPass::checkEqv(ICmpInst *I0, ICmpInst *I1) {
+bool BugFreeAlgebraSimplifyPass::checkEqv(ICmpInst *I0, ICmpInst *I1) {
     bool isEqv = false;
     Solver->push();
     BasicBlock *BB = I0->getParent();

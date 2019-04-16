@@ -8,7 +8,7 @@ namespace llvm {
     class ICmpInst;
 }
 
-class BugFreeAlgebraSimplyPass : public BugFreePass {
+class BugFreeAlgebraSimplifyPass : public BugFreePass {
     llvm::TargetLibraryInfo *TLI;
     llvm::ScalarEvolution *SE;
 
@@ -18,5 +18,5 @@ class BugFreeAlgebraSimplyPass : public BugFreePass {
 	bool checkEqv(llvm::ICmpInst *Old, llvm::ICmpInst *New);
 
 public:
-    static llvm::StringRef name() { return "BugFreeAlgebraSimplyPass"; }
+    static llvm::StringRef name() { return "BugFreeAlgebraSimplifyPass"; }
 };

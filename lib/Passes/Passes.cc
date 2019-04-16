@@ -1,4 +1,4 @@
-#include "BugFreeAlgebraSimply.h"
+#include "BugFreeAlgebraSimplify.h"
 #include "BugOnInt.h"
 #include "BugOnNull.h"
 #include "BugOnUndef.h"
@@ -35,7 +35,7 @@ llvmGetPassPluginInfo() {
                 return true;
             }
             if (PassName == "bugfree") {
-                FPM.addPass(BugFreeAlgebraSimplyPass());
+                FPM.addPass(BugFreeAlgebraSimplifyPass());
                 return true;
             }
             return false;
