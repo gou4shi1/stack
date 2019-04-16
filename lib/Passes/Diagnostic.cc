@@ -10,7 +10,7 @@ using namespace llvm;
 
 Diagnostic::Diagnostic() : OS(errs()) {}
 
-void Diagnostic::backtrace(Instruction *I) {
+void Diagnostic::backtrace(const Instruction *I) {
     const DILocation *Loc = I->getDebugLoc();
     if (!Loc)
         return;

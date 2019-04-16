@@ -22,7 +22,7 @@ bool recursivelyClearDebugLoc(Value *V) {
     return true;
 }
 
-bool hasSingleDebugLocation(Instruction *I) {
+bool hasSingleDebugLocation(const Instruction *I) {
     const DebugLoc &DbgLoc = I->getDebugLoc();
     // Skip inserted instructions without debugging information.
     if (!DbgLoc)

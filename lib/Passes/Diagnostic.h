@@ -20,7 +20,7 @@ class Diagnostic {
     void bug(llvm::Instruction *);
     void bug(const llvm::Twine &);
 
-    void backtrace(llvm::Instruction *);
+    void backtrace(const llvm::Instruction *);
     void location(const llvm::DILocation *);
     void status(const llvm::Optional<bool> &Status);
 
