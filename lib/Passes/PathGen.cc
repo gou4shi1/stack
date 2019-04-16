@@ -7,10 +7,12 @@
 
 using namespace llvm;
 
-static BasicBlock *findCommonDominator(BasicBlock *BB,
+static BasicBlock *findCommonDominatorOfPredecessors(BasicBlock *BB,
                                        const DominatorTree *DT) {
-    BasicBlock *Dom = *pred_begin(BB);
+    BasicBlock *Dom = BB;
     for (const auto &Pred : predecessors(BB)) {
+        if (!DT->isReachableFromEntry(Pred))
+            continue;
         Dom = DT->findNearestCommonDominator(Dom, Pred);
     }
     return Dom;
@@ -20,6 +22,11 @@ SMTExprRef PathGen::get(BasicBlock *BB) {
     if (Cache.count(BB))
         return Cache.lookup(BB);
     SMTExprRef G;
+    if (!DT->isReachableFromEntry(BB)) {
+        G = mkBVFalse(Solver);
+        Cache[BB] = G;
+        return G;
+    }
     // Entry block has true guard.
     if (BB == &BB->getParent()->getEntryBlock()) {
         G = mkBVTrue(Solver);
@@ -28,8 +35,12 @@ SMTExprRef PathGen::get(BasicBlock *BB) {
     }
     // Fall back to common ancestors if any back edges.
     for (const auto &Pred : predecessors(BB)) {
-        if (isBackedge(Pred, BB))
-            return get(findCommonDominator(BB, DT));
+        // TODO: backedge may unReachable
+        if (!DT->isReachableFromEntry(Pred) || !isBackedge(Pred, BB))
+            continue;
+        BasicBlock *Dom = findCommonDominatorOfPredecessors(BB, DT);
+        if (Dom != BB)
+            return get(Dom);
     }
     // The guard is the disjunction of predecessors' guards.
     // Initialize to false.

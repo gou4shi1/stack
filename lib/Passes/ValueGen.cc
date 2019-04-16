@@ -202,7 +202,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
             if (C && C->isZero())
                 continue;
             // For a struct, add the member offset.
-            if (StructType *ST = dyn_cast<StructType>(GTI.getIndexedType())) {
+            if (StructType *ST = GTI.getStructTypeOrNull()) {
                 assert(C);
                 unsigned FieldNo = C->getZExtValue();
                 ConstOffset =
@@ -227,7 +227,7 @@ class ValueVisitor : public InstVisitor<ValueVisitor, SMTExprRef> {
             }
             SMTExprRef SElemSize = mkBV(Solver, ElemSize);
             SMTExprRef LocalOffset = Solver->mkBVMul(SIdx, SElemSize);
-            SMTExprRef Offset = Solver->mkBVAdd(Offset, LocalOffset);
+            Offset = Solver->mkBVAdd(Offset, LocalOffset);
         }
 
         if (!ConstOffset)
