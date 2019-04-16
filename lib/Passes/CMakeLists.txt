@@ -13,6 +13,7 @@ add_llvm_library(libStackPasses MODULE
     ValueGen.cc
     PathGen.cc
     BugFree.cc
+    BugFreeDCE.cc
     BugFreeAlgebraSimplify.cc
     Passes.cc
     )
